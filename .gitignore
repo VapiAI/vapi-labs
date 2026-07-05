@@ -1,0 +1,29 @@
+# Secrets — never commit real env files
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
+build/
+.npm-global/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Editors
+.idea/

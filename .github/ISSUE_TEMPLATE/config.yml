@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vapi Docs
+    url: https://docs.vapi.ai
+    about: Visit the documentation to get started building with Vapi.
+  - name: Vapi Discord Community
+    url: https://discord.gg/jV8uyuGBND
+    about: Ask questions and get help from the community.

@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in one of the showcase projects isn't working
+title: "[project-name] "
+labels: ["bug"]
+body:
+  - type: input
+    id: project
+    attributes:
+      label: Which project?
+      placeholder: e.g. dnd-storyteller
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+  - type: markdown
+    attributes:
+      value: |
+        Reminder: these are experimental demos. For help with the Vapi platform itself, use [docs.vapi.ai](https://docs.vapi.ai) or [Discord](https://discord.com/invite/pUFNcf2WmH).
