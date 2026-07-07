@@ -1,6 +1,6 @@
 # <Project Name>
 
-> 🧪 **This is a showcase demo, not an officially supported Vapi product.** Built by [name/team] at Vapi for [context — a talk, a hackathon, a weekend project]. This is meant to inspire, not production ready.
+> EXAMPLE (replace with what is relevant to your project): 🧪 **This is a showcase demo, not an officially supported Vapi product.** Built by [name/team] at Vapi for [context — a talk, a hackathon, a weekend project]. This is meant to inspire, not production ready.
 
 ## What it does
 
