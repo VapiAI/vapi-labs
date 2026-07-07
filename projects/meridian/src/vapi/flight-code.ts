@@ -256,7 +256,7 @@ const eligible = voucher > 0;
 return {
   eligible: eligible, tier: tier,
   message: eligible
-    ? "I've noted a travel-credit request for this disruption; our team will review it and follow up."
+    ? "I've noted a travel credit request for this disruption; our team will review it and follow up."
     : "There's no eligible disruption here, so there's nothing to submit.",
 };
 `;

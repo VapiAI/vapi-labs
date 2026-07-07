@@ -126,6 +126,6 @@ const created = await insert("service_requests", {
 
 return {
   submitted: true, status: "pending", toRoom: toRoom,
-  message: "I've put in the request for " + toRoom + " at " + rateWords + ". The team confirms availability and it goes on your folio at check-in; nothing's charged now.",
+  message: "I've put in the request for " + toRoom + " at " + rateWords + ". The team confirms availability and it goes on your folio when you check in; nothing's charged now.",
 };
 `;
