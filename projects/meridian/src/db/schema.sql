@@ -74,6 +74,7 @@ create index if not exists idx_reservations_guest on reservations (guest_id);
 -- PostgREST API roles need explicit table privileges: tables created over a direct
 -- postgres connection don't inherit Supabase's default grants. RLS stays OFF — all
 -- access is server-side via the secret / service_role key.
+-- refer to supabase documentation for best practices for RLS before considering this for a production deployment
 grant usage on schema public to anon, authenticated, service_role;
 grant all on all tables in schema public to anon, authenticated, service_role;
 grant all on all sequences in schema public to anon, authenticated, service_role;
