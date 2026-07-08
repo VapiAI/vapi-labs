@@ -13,6 +13,7 @@ A running list of projects, each self-contained in its own folder under `project
 
 | Project | What it is | Built by |
 |---|---|---|
+| [meridian](projects/meridian) | A 5-assistant hotel + airline concierge squad built with only native Vapi primitives (code tools, transfers, evals), zero hosting required | [Justin Crowe](https://github.com/justincrowe-hub) |
 
 
 ## Browsing / running a project

@@ -1,0 +1,44 @@
+{
+  "name": "meridian",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Meridian — a 5-assistant Vapi squad: hotel + airline membership concierge, built native-Vapi (code tools, no webhook required)",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check": "tsx src/test/check-connections.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "kb:upload": "tsx src/vapi/upload-kb.ts",
+    "assistant:concierge": "tsx src/vapi/assistants/concierge.ts",
+    "assistant:hotel": "tsx src/vapi/assistants/hotel-concierge.ts",
+    "assistant:triage": "tsx src/vapi/assistants/flight-triage.ts",
+    "assistant:rebooking": "tsx src/vapi/assistants/rebooking.ts",
+    "assistant:upsell": "tsx src/vapi/assistants/upsell-recovery.ts",
+    "assistant:outbound": "tsx src/vapi/assistants/outbound-disruption.ts",
+    "squad": "tsx src/vapi/squad.ts",
+    "campaign": "tsx src/vapi/campaign.ts",
+    "simulations": "tsx src/vapi/simulations.ts",
+    "server": "tsx src/server.ts",
+    "test:synth": "tsx src/test/synth-reservation.ts",
+    "test:flight": "tsx src/test/flight-tools.ts",
+    "test:audit": "tsx src/test/audit-tools.ts",
+    "test:verify": "tsx src/test/verify-config.ts",
+    "test:webhook": "tsx src/test/simulate-webhook.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@vapi-ai/server-sdk": "^1.2.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "posthog-node": "^5.38.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.15.7",
+    "typescript": "^5.5.2"
+  }
+}
