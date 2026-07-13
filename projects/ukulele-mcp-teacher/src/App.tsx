@@ -157,7 +157,7 @@ export function App() {
               className="mcp-frame"
               title={`${currentTitle} practice card`}
               src={runtime.uiFrameUrl}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               referrerPolicy="origin"
               onLoad={(event) => {
                 event.currentTarget.classList.add('ready');

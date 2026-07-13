@@ -12,7 +12,7 @@ Ukulele MCP Teacher is a hands-free practice app for the beginner ukulele chords
 - A Vapi account with a private API key and public web key
 - [ngrok](https://ngrok.com/) or another HTTPS tunnel
 
-Get both public and private Vapi keys from **[Vapi Dashboard](dashboard.vapi.ai) → profile menu → Vapi API Keys**. 
+Get both public and private Vapi keys from **[Vapi Dashboard](https://dashboard.vapi.ai) → profile menu → Vapi API Keys**. 
 
 ### 1. Install and configure
 

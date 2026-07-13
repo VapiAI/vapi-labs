@@ -36,8 +36,7 @@ type UsePracticeRuntimeOptions = {
 };
 
 const practiceTurnCommitDelayMs = 120;
-const mcpServerOrigin = import.meta.env.VITE_MCP_SERVER_ORIGIN ?? 'http://localhost:8787';
-const mcpSandboxProxyUrl = new URL('/mcp-sandbox-proxy', mcpServerOrigin).toString();
+const mcpSandboxProxyUrl = '/mcp-sandbox-proxy';
 
 export function usePracticeRuntime({
   state,
