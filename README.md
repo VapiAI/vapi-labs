@@ -14,7 +14,7 @@ A running list of projects, each self-contained in its own folder under `project
 | Project | What it is | Built by |
 |---|---|---|
 | [meridian](projects/meridian) | A 5-assistant hotel + airline concierge squad built with only native Vapi primitives (code tools, transfers, evals), zero hosting required | [Justin Crowe](https://github.com/justincrowe-hub) |
-| [Ukelele MCP Teacher](projects/ukelele-mcp-teacher) | Ukulele MCP Teacher is a hands-free practice app for the beginner ukulele chords `C`, `Am`, `F`, `G`, and `G7`. Lead by a Vapi assistant instructor, visualized cards via MCP, strums into the browser microphone, and receives immediate feedback. | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
+| [Ukelele MCP Teacher](projects/ukulele-mcp-teacher) | Ukulele MCP Teacher is a hands-free practice app for the beginner ukulele chords `C`, `Am`, `F`, `G`, and `G7`. Lead by a Vapi assistant instructor, visualized cards via MCP, strums into the browser microphone, and receives immediate feedback. | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
 
 
 ## Browsing / running a project

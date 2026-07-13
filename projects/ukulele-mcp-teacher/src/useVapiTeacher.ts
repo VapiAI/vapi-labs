@@ -191,6 +191,7 @@ export function useVapiTeacher(options: UseVapiTeacherOptions = {}) {
         traceFlow('vapi', 'call-start');
         endingSessionRef.current = false;
         localSessionEndedRef.current = false;
+        lastAnnouncedChordRef.current = null;
         suppressInterruptedAssistantTranscriptRef.current = false;
         userInputMutedRef.current = false;
         setStatus('connected');

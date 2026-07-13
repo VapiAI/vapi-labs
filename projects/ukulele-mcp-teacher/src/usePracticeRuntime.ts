@@ -400,6 +400,12 @@ export function usePracticeRuntime({
     traceFlow('app', 'end-local-session');
     clearPracticeTurnCommitTimer();
     clearInstructionCompletionTimer();
+    bridgeGenerationRef.current += 1;
+    const appBridge = appBridgeRef.current;
+    appBridgeRef.current = null;
+    appBridgeReadyRef.current = false;
+    pendingToolResultRef.current = null;
+    void appBridge?.close();
     autoListenArmedRef.current = false;
     retryFeedbackPendingRef.current = false;
     activeAttemptRef.current = null;
