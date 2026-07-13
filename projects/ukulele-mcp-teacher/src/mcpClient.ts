@@ -5,17 +5,17 @@ import { chordToolName, resourceMimeType } from './mcpContract';
 export { resourceMimeType } from './mcpContract';
 
 const uiExtensionId = 'io.modelcontextprotocol/ui';
-let clientPromise: Promise<Client> | null = null;
 const uiResourcePromises = new Map<string, Promise<UiResource>>();
 
 export async function showUkuleleChord(chord: ChordName): Promise<ToolResult> {
-  const client = await mcpClient();
-  const result = await client.callTool({
-    name: chordToolName,
-    arguments: { chord },
-  });
+  return withMcpClient(async (client) => {
+    const result = await client.callTool({
+      name: chordToolName,
+      arguments: { chord },
+    });
 
-  return result as ToolResult;
+    return result as ToolResult;
+  });
 }
 
 export async function readUiResource(resourceUri: string): Promise<UiResource> {
@@ -31,31 +31,36 @@ export async function readUiResource(resourceUri: string): Promise<UiResource> {
 }
 
 async function fetchUiResource(resourceUri: string): Promise<UiResource> {
-  const client = await mcpClient();
-  const result = await client.readResource({ uri: resourceUri });
+  return withMcpClient(async (client) => {
+    const result = await client.readResource({ uri: resourceUri });
 
-  return {
-    contents: result.contents.map((content) => {
-      if (!('text' in content)) {
-        throw new Error(`MCP UI resource ${content.uri} did not return text content.`);
-      }
+    return {
+      contents: result.contents.map((content) => {
+        if (!('text' in content)) {
+          throw new Error(`MCP UI resource ${content.uri} did not return text content.`);
+        }
 
-      if (content.mimeType !== resourceMimeType) {
-        throw new Error(`MCP UI resource ${content.uri} returned unsupported MIME type ${content.mimeType ?? 'unknown'}.`);
-      }
+        if (content.mimeType !== resourceMimeType) {
+          throw new Error(`MCP UI resource ${content.uri} returned unsupported MIME type ${content.mimeType ?? 'unknown'}.`);
+        }
 
-      return {
-        uri: content.uri,
-        mimeType: resourceMimeType,
-        text: content.text,
-      };
-    }),
-  };
+        return {
+          uri: content.uri,
+          mimeType: resourceMimeType,
+          text: content.text,
+        };
+      }),
+    };
+  });
 }
 
-async function mcpClient() {
-  clientPromise ??= createMcpClient();
-  return clientPromise;
+async function withMcpClient<T>(operation: (client: Client) => Promise<T>) {
+  const client = await createMcpClient();
+  try {
+    return await operation(client);
+  } finally {
+    void client.close().catch(() => undefined);
+  }
 }
 
 async function createMcpClient() {
