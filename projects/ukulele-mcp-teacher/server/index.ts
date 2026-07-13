@@ -12,7 +12,6 @@ import {
 import { z } from 'zod/v4';
 import { chordCatalog, chordOptions, type ChordName, type ChordResource } from '../src/chords';
 import { chordCardResourceUri, chordToolName } from '../src/mcpContract';
-import { mcpSandboxProxyHtml } from '../src/mcpSandboxProxy';
 import { renderChordApp } from './chordCardApp';
 
 const app = new Hono();
@@ -81,19 +80,6 @@ app.get('/vapi-tool-events', (c) =>
     traceServerFlow('host-events-disconnect');
     clearInterval(heartbeat);
     hostToolEventSubscribers.delete(subscriber);
-  }),
-);
-
-app.get('/mcp-sandbox-proxy', (c) =>
-  c.html(mcpSandboxProxyHtml, 200, {
-    'Cache-Control': 'public, max-age=3600',
-    'Content-Security-Policy': [
-      "default-src 'none'",
-      "script-src 'unsafe-inline'",
-      "style-src 'unsafe-inline'",
-      "frame-src 'self' about:",
-      "base-uri 'none'",
-    ].join('; '),
   }),
 );
 

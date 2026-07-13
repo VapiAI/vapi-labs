@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
-import type { AppBridge } from '@modelcontextprotocol/ext-apps/app-bridge';
+import { AppBridge, PostMessageTransport } from '@modelcontextprotocol/ext-apps/app-bridge';
 import { chordSpokenNames, isChordName } from './chords';
 import { traceFlow } from './flowTrace';
 import { chordToolName } from './mcpContract';
@@ -36,8 +36,6 @@ type UsePracticeRuntimeOptions = {
 };
 
 const practiceTurnCommitDelayMs = 120;
-const mcpSandboxProxyUrl = '/mcp-sandbox-proxy';
-
 export function usePracticeRuntime({
   state,
   detector,
@@ -55,8 +53,6 @@ export function usePracticeRuntime({
   const appBridgeRef = useRef<AppBridge | null>(null);
   const appBridgeReadyRef = useRef(false);
   const bridgeGenerationRef = useRef(0);
-  const uiHtmlRef = useRef<string | null>(null);
-  const uiResourceUriRef = useRef<string | null>(null);
   const pendingToolResultRef = useRef<{ result: ToolResult; requestId: number } | null>(null);
   const committedToolResultRef = useRef<{ exerciseId: number; chord: ChordName } | null>(null);
   const practiceTurnCommitTimerRef = useRef<number | null>(null);
@@ -67,8 +63,6 @@ export function usePracticeRuntime({
 
   stateRef.current = state;
   detectorListeningRef.current = detector.isListening;
-  uiHtmlRef.current = state.uiHtml;
-  uiResourceUriRef.current = state.uiResourceUri;
 
   const startListeningAfterShowing = useEffectEvent(() => {
     autoListenArmedRef.current = false;
@@ -573,9 +567,6 @@ export function usePracticeRuntime({
     const frameWindow = frame.contentWindow;
     if (!frameWindow) return;
 
-    const { AppBridge, PostMessageTransport } = await import(
-      '@modelcontextprotocol/ext-apps/app-bridge'
-    );
     if (bridgeGeneration !== bridgeGenerationRef.current || frame.contentWindow !== frameWindow) return;
 
     const bridge = new AppBridge(
@@ -646,23 +637,6 @@ export function usePracticeRuntime({
       });
       void sendPendingToolDataToApp();
     };
-    bridge.onsandboxready = () => {
-      if (bridgeGeneration !== bridgeGenerationRef.current) return;
-      const html = uiHtmlRef.current;
-      if (!html) {
-        traceFlow('mcp-app', 'sandbox-ready-without-html', { bridgeGeneration });
-        return;
-      }
-
-      traceFlow('mcp-app', 'sandbox-resource-ready-send', {
-        resourceUri: uiResourceUriRef.current,
-        bridgeGeneration,
-      });
-      void bridge.sendSandboxResourceReady({
-        html,
-        sandbox: 'allow-scripts',
-      });
-    };
     bridge.onsizechange = ({ height }) => {
       if (bridgeGeneration !== bridgeGenerationRef.current) return;
       traceFlow('mcp-app', 'bridge-size-change', { height });
@@ -727,7 +701,6 @@ export function usePracticeRuntime({
 
   return {
     uiHtml: state.uiHtml,
-    uiFrameUrl: state.uiHtml ? mcpSandboxProxyUrl : null,
     uiFrameResourceUri: state.uiResourceUri,
     startPractice,
     connectMcpAppFrame,

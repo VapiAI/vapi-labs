@@ -151,14 +151,13 @@ export function App() {
             <span className={`state-badge state-${state.kind}`}>{state.kind}</span>
           </div>
 
-          {runtime.uiFrameUrl && runtime.uiFrameResourceUri ? (
+          {runtime.uiHtml && runtime.uiFrameResourceUri ? (
             <iframe
               key={runtime.uiFrameResourceUri}
               className="mcp-frame"
               title={`${currentTitle} practice card`}
-              src={runtime.uiFrameUrl}
-              sandbox="allow-scripts allow-same-origin"
-              referrerPolicy="origin"
+              srcDoc={runtime.uiHtml}
+              sandbox="allow-scripts"
               onLoad={(event) => {
                 event.currentTarget.classList.add('ready');
                 void runtime.connectMcpAppFrame(event.currentTarget);

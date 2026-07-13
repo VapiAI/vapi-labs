@@ -49,6 +49,7 @@ export function renderChordApp() {
 	    const protocolVersion = '2026-01-26';
 	    let nextRequestId = 1;
 	    let initialized = false;
+	    let initializeRetryTimer = null;
 	    let currentChord = null;
 	    const pendingRequests = new Map();
 	    const backButton = document.getElementById('back-button');
@@ -200,18 +201,25 @@ export function renderChordApp() {
 
 	    async function initialize() {
 	      if (initialized) return;
+	      if (initializeRetryTimer === null) {
+	        initializeRetryTimer = window.setTimeout(() => {
+	          initializeRetryTimer = null;
+	          void initialize();
+	        }, 250);
+	      }
 	      try {
 	        await sendRequest('ui/initialize', {
 	          protocolVersion,
 	          appInfo: { name: 'ukulele-chord-card', version: '0.1.0' },
 	          appCapabilities: {},
 	        });
+	        if (initialized) return;
 	        initialized = true;
+	        window.clearTimeout(initializeRetryTimer);
+	        initializeRetryTimer = null;
 	        sendNotification('ui/notifications/initialized');
 	        sendSizeChanged();
-	      } catch {
-	        if (!initialized) window.setTimeout(initialize, 250);
-	      }
+	      } catch {}
 	    }
 
 	    window.addEventListener('message', (event) => {
@@ -245,10 +253,13 @@ export function renderChordApp() {
 	    setControlsDisabled(true);
 	    backButton.addEventListener('click', () => callChordTool(currentChord?.previous));
 	    nextButton.addEventListener('click', () => callChordTool(currentChord?.next));
-	    initialize();
+	    // The host attaches its postMessage transport from the iframe load event.
+	    // Start on the next task, then retry without waiting for a lost request to
+	    // time out so a cold host import cannot leave the card uninitialized.
+	    window.addEventListener('load', () => {
+	      window.setTimeout(initialize, 0);
+	    }, { once: true });
 	  </script>
 	</body>
 	</html>`;
 }
-
-
