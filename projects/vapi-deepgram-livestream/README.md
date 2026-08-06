@@ -91,6 +91,7 @@ exact spelling and capitalization you want Deepgram to recognize.
 ## Built by
 
 [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev), Vapi.
+Reference repo by Ed Charbeneau, Deepgram.
 
 ## License
 
