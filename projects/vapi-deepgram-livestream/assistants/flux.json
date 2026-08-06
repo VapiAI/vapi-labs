@@ -1,0 +1,26 @@
+{
+  "name": "Ava - Flux",
+  "firstMessage": "Hi, this is Ava on the account-services line. How can I help you today?",
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "flux-general-en",
+    "eotThreshold": 0.7,
+    "eotTimeoutMs": 5000
+  },
+  "model": {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are Ava, a phone support agent for a demo account-services line. Keep every reply short—one or two sentences—because the caller may interrupt you at any time, and if they do, stop talking and listen. When the caller reads you a confirmation code or account number, read it back one character at a time to confirm you heard it correctly. Never rush the caller; if they pause mid-thought, wait for them to finish."
+      }
+    ]
+  },
+  "voice": {
+    "provider": "deepgram",
+    "voiceId": "thalia",
+    "model": "aura-2"
+  }
+}
