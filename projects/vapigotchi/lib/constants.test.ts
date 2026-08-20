@@ -44,6 +44,7 @@ describe("main assistant configuration", () => {
       "chicken",
       "cheese",
       "tomato",
+      "lemon",
       "taco",
       "arepa",
       "pupusa",

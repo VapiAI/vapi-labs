@@ -165,6 +165,20 @@ function foodShapeIngredientGet(food: FoodSpriteProps["food"]): ReactNode {
           <rect x="11" y="19" width="5" height="8" rx="2" fill="#ff8880" />
         </>
       );
+    case "lemon":
+      return (
+        <>
+          <path
+            d="M5 24C7 13 15 7 27 8l9-4-3 9c5 6 5 14 0 20-6 7-17 8-24 2-4-3-6-7-4-11z"
+            fill="#f6dc45"
+            stroke="#a87828"
+            strokeWidth="2"
+          />
+          <path d="M27 8c2-6 8-7 12-4-3 5-7 8-12 8z" fill="#62b866" />
+          <rect x="10" y="19" width="5" height="5" fill="#fff58a" />
+          <rect x="28" y="27" width="4" height="4" fill="#d5a62f" />
+        </>
+      );
   }
 }
 

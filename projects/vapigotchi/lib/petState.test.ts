@@ -33,6 +33,7 @@ describe("pet state", () => {
     expect(petState.isFoodType("pizza")).toEqual(true);
     expect(petState.isFoodType("burger")).toEqual(true);
     expect(petState.isFoodType("sushi")).toEqual(true);
+    expect(petState.isFoodType("lemon")).toEqual(true);
     expect(petState.isFoodType("battery")).toEqual(false);
     expect(petState.isValidPetId("assistant_123-main")).toEqual(true);
     expect(petState.isValidPetId("not/a/pet")).toEqual(false);

@@ -17,6 +17,7 @@ const NEW_FOODS: FoodType[] = [
   "chicken",
   "cheese",
   "tomato",
+  "lemon",
 ];
 
 describe("food sprite", () => {

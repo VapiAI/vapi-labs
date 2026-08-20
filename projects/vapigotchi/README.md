@@ -150,9 +150,10 @@ Feed request:
 
 Available foods are `apple`, `pizza`, `burger`, `sushi`, `bagel`,
 `protein-shake`, `sandwich`, `empanada`, `ramen`, `soup`, `burrito`,
-`filet-mignon`, `chicken`, `cheese`, `tomato`, `taco`, `arepa`, `pupusa`, and
-`ceviche`. A meal adds 15 health up to 100. Health lazily decays by one point
-every two minutes.
+`filet-mignon`, `chicken`, `cheese`, `tomato`, `lemon`, `taco`, `arepa`,
+`pupusa`, and `ceviche`. A meal adds 15 health up to 100. Lemon uses the same
+health gain but makes the creature squint, pucker, sweat, and shudder at the
+sour taste. Health lazily decays by one point every two minutes.
 
 Optional care request:
 

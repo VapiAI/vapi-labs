@@ -17,7 +17,7 @@ export function PixelPet({
   const copy = HOME_COPY[language].pet;
 
   return (
-    <div className="pet-viewport" data-state={state}>
+    <div className="pet-viewport" data-food={food} data-state={state}>
       <div className="pixel-grid" aria-hidden="true" />
       <svg
         className="pixel-pet"
@@ -69,6 +69,15 @@ export function PixelPet({
             <rect className="mouth-open" x="116" y="136" width="28" height="20" />
             <rect className="mouth-inner" x="122" y="144" width="16" height="8" />
           </g>
+
+          {food === "lemon" && (
+            <g className="sour-face">
+              <path className="sour-eyes" d="M82 114h8l8-10 8 10h8m32 0h8l8-10 8 10h8" />
+              <rect className="sour-mouth-outline" x="115" y="137" width="30" height="26" />
+              <rect className="sour-mouth-fill" x="122" y="144" width="16" height="12" />
+              <path className="sour-sweat" d="M188 86l10 15-10 11-10-11z" />
+            </g>
+          )}
         </g>
 
         <g className="antenna">

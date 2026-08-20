@@ -14,6 +14,7 @@ export type FoodType =
   | "chicken"
   | "cheese"
   | "tomato"
+  | "lemon"
   | "taco"
   | "arepa"
   | "pupusa"
