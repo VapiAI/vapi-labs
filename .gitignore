@@ -7,6 +7,8 @@
 node_modules/
 dist/
 build/
+!projects/vapigotchi/build/
+!projects/vapigotchi/build/sites-vite-plugin.ts
 .npm-global/
 
 # Python
