@@ -18,6 +18,7 @@ const FOOD_MENU = [
   "chicken",
   "cheese",
   "tomato",
+  "lemon",
   "taco",
   "arepa",
   "pupusa",

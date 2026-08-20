@@ -13,7 +13,7 @@ describe("pet visual state", () => {
   it("maps every API action event to its animation", () => {
     expect([
       petVisualStateGet(
-        { ...EVENT_BASE, type: "pet.fed", food: "burger" },
+        { ...EVENT_BASE, type: "pet.fed", food: "lemon" },
         null,
       ),
       petVisualStateGet(

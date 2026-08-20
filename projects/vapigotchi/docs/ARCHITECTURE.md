@@ -84,6 +84,8 @@ The Vapi server event endpoint handles `status-update` and `speech-update`.
 Unknown message types are acknowledged but ignored, which keeps it safe to use
 as an assistant-level Server URL alongside additional enabled Vapi messages.
 
-The feed API accepts one `food` value from the fixed enum. The optional care API
-accepts `dance-salsa`, `shower`, or `nap`. D1 batches each health update and
-event insert so pollers receive an ordered animation cursor.
+The feed API accepts one `food` value from the fixed enum. A `lemon` event uses
+the standard meal health gain and adds a lemon-only sour expression to the
+normal eating animation. The optional care API accepts `dance-salsa`, `shower`,
+or `nap`. D1 batches each health update and event insert so pollers receive an
+ordered animation cursor.

@@ -64,6 +64,7 @@ export const FOOD_TYPES: FoodType[] = [
   "chicken",
   "cheese",
   "tomato",
+  "lemon",
   "taco",
   "arepa",
   "pupusa",

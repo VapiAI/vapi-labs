@@ -582,6 +582,30 @@ pre,
   fill: var(--pink);
 }
 
+.sour-face {
+  display: none;
+}
+
+.sour-eyes {
+  fill: none;
+  stroke: var(--line);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 7;
+}
+
+.sour-mouth-outline {
+  fill: var(--line);
+}
+
+.sour-mouth-fill {
+  fill: var(--yellow);
+}
+
+.sour-sweat {
+  fill: var(--cyan);
+}
+
 .antenna-light {
   fill: var(--mint);
   animation: blink 1.1s steps(2, end) infinite;
@@ -742,6 +766,32 @@ pre,
 .pet-viewport[data-state="eating"] .pixel-hearts {
   opacity: 1;
   animation: hearts-rise 1.5s steps(4, end) infinite;
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .pet-eyes,
+.pet-viewport[data-state="eating"][data-food="lemon"] .pet-mouth {
+  display: none;
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .sour-face {
+  display: block;
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .pet-cheek {
+  fill: var(--yellow);
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .pixel-pet {
+  animation: sour-shudder 320ms steps(2, end) infinite;
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .pixel-hearts {
+  display: none;
+}
+
+.pet-viewport[data-state="eating"][data-food="lemon"] .antenna-light {
+  fill: var(--yellow);
+  animation-duration: 180ms;
 }
 
 .pet-viewport[data-state="weak"] .pet-fill {
@@ -2263,6 +2313,16 @@ pre,
   100% {
     opacity: 0;
     transform: translate(109px, 139px) scale(0);
+  }
+}
+
+@keyframes sour-shudder {
+  0%,
+  100% {
+    transform: translateX(-4px) rotate(-1deg);
+  }
+  50% {
+    transform: translateX(4px) rotate(1deg);
   }
 }
 

@@ -128,8 +128,9 @@ cards as a manual fallback or a way to inspect the exact configuration:
 ### 4. Test the complete loop
 
 Open the generated live pet page and keep it visible. Start a call with the Test
-button in Vapi, ask the assistant how it feels, then ask it to eat. The room
-should see the call, conversation, and API action become visible animations.
+button in Vapi, ask the assistant how it feels, then ask it to eat a lemon. The
+room should see the call, conversation, API action, and exaggerated sour face
+become visible animations.
 
 ### Optional bonus: add care actions
 
