@@ -1,0 +1,65 @@
+{
+  "type": "code",
+  "async": false,
+  "function": {
+    "name": "create_restaurant_reservation",
+    "description": "Create a new Ember & Vine reservation. Call only after the selected date, time, and party size have been checked for availability and the caller has directly approved the final booking details. Pass an empty string for any note that does not apply. The tool returns confirmed only when the demo reservation succeeds.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reservationDate": {
+          "type": "string",
+          "description": "Confirmed reservation calendar date in YYYY-MM-DD format."
+        },
+        "reservationTime": {
+          "type": "string",
+          "description": "Confirmed restaurant-local time in 24-hour HH:mm format."
+        },
+        "partySize": {
+          "type": "integer",
+          "description": "Confirmed number of guests."
+        },
+        "guestName": {
+          "type": "string",
+          "description": "Caller-provided name for the reservation."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Caller-provided phone number, normalized when possible. This value is not verified identity."
+        },
+        "occasion": {
+          "type": "string",
+          "description": "Short occasion note, or an empty string when none was provided."
+        },
+        "seatingNeeds": {
+          "type": "string",
+          "description": "Short seating or stroller note, or an empty string when none was provided."
+        },
+        "allergyNotes": {
+          "type": "string",
+          "description": "Short caller-provided allergy note, or an empty string when none was provided. This is a note, not an allergen-free guarantee."
+        }
+      },
+      "required": [
+        "reservationDate",
+        "reservationTime",
+        "partySize",
+        "guestName",
+        "phoneNumber",
+        "occasion",
+        "seatingNeeds",
+        "allergyNotes"
+      ]
+    }
+  },
+  "code": "const {\n  reservationDate,\n  reservationTime,\n  partySize,\n  guestName,\n  phoneNumber,\n  occasion,\n  seatingNeeds,\n  allergyNotes,\n} = args;\n\nconst isValidIsoDate = (value) => {\n  if (typeof value !== \"string\" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;\n  const parsed = new Date(`${value}T00:00:00.000Z`);\n  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;\n};\n\nconst isValidTime = (value) => {\n  const match = typeof value === \"string\" && value.match(/^(\\d{2}):(\\d{2})$/);\n  return Boolean(match) && Number(match[1]) < 24 && Number(match[2]) < 60;\n};\n\nconst requiredTextIsValid = [guestName, phoneNumber].every(\n  (value) => typeof value === \"string\" && value.trim().length > 0,\n);\nconst notesAreValid = [occasion, seatingNeeds, allergyNotes].every(\n  (value) => typeof value === \"string\",\n);\n\nif (!isValidIsoDate(reservationDate) || !isValidTime(reservationTime) || !Number.isInteger(partySize) || !requiredTextIsValid || !notesAreValid) {\n  return {\n    status: \"failed\",\n    reason: \"missing_or_invalid_required_information\",\n  };\n}\n\nif (partySize < 1 || partySize > 8) {\n  return {\n    status: \"failed\",\n    reason: \"party_size_not_supported\",\n  };\n}\n\nif (reservationTime !== \"18:45\" && reservationTime !== \"20:00\") {\n  return {\n    status: \"failed\",\n    reason: \"slot_not_available\",\n  };\n}\n\nreturn {\n  status: \"confirmed\",\n  confirmationCode: \"EV-2048\",\n  reservationDate,\n  reservationTime,\n  partySize,\n};",
+  "timeoutSeconds": 5,
+  "messages": [
+    {
+      "type": "request-start",
+      "content": "One moment while I book that."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "system-prompt-testing-simulations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "push": "node scripts/push-to-vapi.mjs",
+    "simulation:create": "node scripts/create-simulation.mjs",
+    "simulation:run": "node scripts/run-simulations.mjs"
+  }
+}
+

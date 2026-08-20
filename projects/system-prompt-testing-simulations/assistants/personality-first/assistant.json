@@ -1,0 +1,32 @@
+{
+  "name": "Ember Reservations — Personality",
+  "systemPromptFile": "system-prompt.md",
+  "firstMessage": "Thanks for calling Ember & Vine. How can I help?",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4.1",
+    "temperature": 0.3
+  },
+  "voice": {
+    "provider": "vapi",
+    "voiceId": "Savannah",
+    "version": 2
+  },
+  "transcriber": {
+    "provider": "soniox",
+    "model": "stt-rt-v5",
+    "language": "en"
+  },
+  "startSpeakingPlan": { "waitSeconds": 0.4 },
+  "stopSpeakingPlan": { "numWords": 0, "voiceSeconds": 0.2, "backoffSeconds": 1 },
+  "firstMessageInterruptionsEnabled": false,
+  "backgroundSpeechDenoisingPlan": { "smartDenoisingPlan": { "enabled": true } },
+  "backgroundSound": "off",
+  "artifactPlan": {
+    "recordingEnabled": true,
+    "loggingEnabled": true,
+    "transcriptPlan": { "enabled": true }
+  },
+  "maxDurationSeconds": 180
+}
+

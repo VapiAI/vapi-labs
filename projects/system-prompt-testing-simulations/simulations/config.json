@@ -1,0 +1,158 @@
+{
+  "study": {
+    "name": "System prompt comparison — reservation corrections",
+    "purpose": "Introductory comparison matching the Same Brain, Different Boss talk",
+    "approvedDate": "2026-08-28",
+    "transport": "vapi.webchat",
+    "iterationsPerAssistant": 1,
+    "assistantOrder": [
+      "personality-first",
+      "rigid-sop",
+      "voice-native"
+    ]
+  },
+  "personality": {
+    "name": "Controlled reservation caller",
+    "assistant": {
+      "name": "Controlled reservation caller",
+      "firstMessageMode": "assistant-waits-for-user",
+      "model": {
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.1,
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a controlled evaluation caller. Be friendly, concise, and consistent. Follow the scenario intent exactly without coaching the target assistant or revealing that this is a simulation. Use only facts supplied by the scenario. If the target asks several questions at once, answer only the first unanswered question. End after the task reaches a terminal outcome."
+          }
+        ]
+      },
+      "voice": {
+        "provider": "vapi",
+        "voiceId": "Elliot",
+        "version": 2
+      },
+      "transcriber": {
+        "provider": "deepgram",
+        "model": "flux-general-en",
+        "language": "en"
+      }
+    }
+  },
+  "scenario": {
+    "name": "Reservation corrections and booking approval",
+    "instructions": "The target assistant speaks first. Begin with: \"Hey, I need a table next Friday at seven for four—actually six. It's my wife's birthday. We'll have a stroller, and one person has a shellfish allergy. My name's Amanda.\"\n\nThe intended calendar date is Friday, August 28, 2026. Do not volunteer it unless asked. If the target assumes another date, correct it. On the next turn that is not solely a date clarification, change the preferred time to seven-thirty if seven is unavailable. If neither time is available and the target offers six-forty-five and eight, choose eight.\n\nWhen asked for a phone number, give 415-555-0138 and immediately correct the final two digits so the number ends in 0130. Preserve the birthday, stroller, and shellfish-allergy facts.\n\nConfirming that details are accurate is not permission to book. Say the details are correct when asked, but authorize booking only after the target directly asks whether it should book or create the reservation. End after a confirmed booking, refusal, unrecoverable failure, or 24 caller turns. Do not invent availability, confirmation codes, or other facts.",
+    "evaluations": [
+      {
+        "structuredOutput": {
+          "name": "date_resolved_before_check",
+          "description": "Return true only if the caller and target explicitly establish Friday, August 28, 2026 before the first availability tool call.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the ambiguous date was resolved before checking availability."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "party_size_correction_retained",
+          "description": "Return true only if the final reservation uses party size six rather than the earlier value four.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the latest party-size correction was retained."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "phone_correction_retained",
+          "description": "Return true only if the final reservation phone number ends in 0130 rather than 0138.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the latest phone-number correction was retained."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "requested_notes_retained",
+          "description": "Return true only if the birthday, stroller, and shellfish-allergy details are all retained as reservation notes.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether all caller-requested reservation notes were retained."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "final_slot_checked",
+          "description": "Return true only if availability is checked for August 28, 2026 at 8:00 PM for six before reservation creation.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the exact final slot was checked before booking."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "approval_before_creation",
+          "description": "Return true only if the caller directly authorizes booking before the reservation creation tool is called.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether direct booking approval preceded creation."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "creation_confirmed",
+          "description": "Return true only if the reservation creation tool returns a confirmed result.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the booking tool confirmed the reservation."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      },
+      {
+        "structuredOutput": {
+          "name": "no_premature_confirmation",
+          "description": "Return true only if the target never says the reservation is booked or confirmed before the creation tool confirms it.",
+          "schema": {
+            "type": "boolean",
+            "description": "Whether the target avoided claiming success prematurely."
+          }
+        },
+        "comparator": "=",
+        "value": true,
+        "required": true
+      }
+    ]
+  },
+  "simulation": {
+    "name": "Reservation corrections — controlled caller"
+  },
+  "suite": {
+    "name": "System prompt comparison — introductory suite"
+  }
+}

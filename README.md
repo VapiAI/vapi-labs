@@ -14,6 +14,7 @@ A running list of projects, each self-contained in its own folder under `project
 | Project | What it is | Built by |
 |---|---|---|
 | [meridian](projects/meridian) | A 5-assistant hotel + airline concierge squad built with only native Vapi primitives (code tools, transfers, evals), zero hosting required | [Justin Crowe](https://github.com/justincrowe-hub) |
+| [System Prompt Testing with Vapi Simulations](projects/system-prompt-testing-simulations) | A controlled comparison of three reservation voice agents that share the same model, voice, tools, and business facts while using different system-prompt strategies - this repo supplements a talk given at TestMu conf in Aug 2026 | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
 | [Ukelele MCP Teacher](projects/ukulele-mcp-teacher) | Ukulele MCP Teacher is a hands-free practice app for the beginner ukulele chords `C`, `Am`, `F`, `G`, and `G7`. Lead by a Vapi assistant instructor, visualized cards via MCP, strums into the browser microphone, and receives immediate feedback. | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
 | [Vapi Deepgram Livestream](projects/vapi-deepgram-livestream) | This project contains assistant configurations based on a demo project shared during the [Voice AI Live Stream](https://www.youtube.com/live/Rs1HybcF0c4?si=gjqcXNkL4y5sr2N9) featuring deepgram | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
 
