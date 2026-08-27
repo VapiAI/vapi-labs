@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vapi-orders-agent",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-25",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "secrets": {
+    "required": [
+      "ORDERS_API_TOKEN"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vapi-orders-agent-db",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
