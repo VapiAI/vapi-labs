@@ -1,0 +1,4 @@
+# Local development and Deploy to Cloudflare require only this Worker runtime secret.
+# Replace the example with a random value containing at least 32 characters.
+# Never add CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, or VAPI_API_KEY here.
+ORDERS_API_TOKEN=replace-with-a-random-value-at-least-32-characters

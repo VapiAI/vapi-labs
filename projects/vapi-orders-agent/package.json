@@ -1,0 +1,30 @@
+{
+  "name": "vapi-orders-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js && node --check src/domain.js && node --check vapi/config.mjs && node --check scripts/setup-helpers.mjs && node --check scripts/dev.mjs && node --check scripts/provision.mjs && node --check scripts/smoke.mjs",
+    "test": "node --test",
+    "dev": "node scripts/dev.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "deploy": "npm run db:migrate:remote && wrangler deploy",
+    "deploy:worker": "wrangler deploy",
+    "setup": "node scripts/provision.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "D1 database used to persist simulated orders. Cloudflare provisions and binds it during Deploy to Cloudflare."
+      },
+      "ORDERS_API_TOKEN": {
+        "description": "Required Worker bearer secret. Generate a random value with at least 32 characters; Vapi must later use the same value through a custom credential."
+      }
+    }
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}
