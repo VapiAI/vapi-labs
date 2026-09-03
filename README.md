@@ -1,6 +1,6 @@
 # Vapi Labs
 
-> 🧪 **This is a repo showcase** Everything in this repository was built by people at Vapi! Some projects are personal, exploratory, or creative. Others are supplemental materials for Vapi education, events, and workshops.
+> 🧪 **This is a repo showcase** Everything in this repository was built by people at Vapi or partners of Vapi! Some projects are personal, exploratory, or creative. Others are supplemental materials for Vapi education, documentation, events, and workshops.
 >
 > - For official docs → [docs.vapi.ai](https://docs.vapi.ai)
 > - For reusable agent skills to build with Vapi → [VapiAI/skills](https://github.com/VapiAI/skills)
