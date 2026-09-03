@@ -1,6 +1,6 @@
 # Vapi Labs
 
-> 🧪 **This is a repo showcase** Everything in this repository was built by people at Vapi! Some projects are personal, exploratory, or creative. Others are supplemental materials for Vapi education, events, and workshops. 
+> 🧪 **This is a repo showcase** Everything in this repository was built by people at Vapi! Some projects are personal, exploratory, or creative. Others are supplemental materials for Vapi education, events, and workshops.
 >
 > - For official docs → [docs.vapi.ai](https://docs.vapi.ai)
 > - For reusable agent skills to build with Vapi → [VapiAI/skills](https://github.com/VapiAI/skills)
@@ -13,6 +13,7 @@ A running list of projects, each self-contained in its own folder under `project
 
 | Project | What it is | Project type | Built by |
 |---|---|---|---|
+| [Cartesia Livestream Vapi Assistant](projects/cartesia-livestream) | A portable Vapi assistant configuration from the [Voice AI Live session](https://youtube.com/live/jhAzWR2jXeg?feature=share) on multilingual voice agents with Cartesia | Event Demo | [Zubin Pratap](https://au.linkedin.com/in/zubinpratap) |
 | [meridian](projects/meridian) | A 5-assistant hotel + airline concierge squad built with only native Vapi primitives (code tools, transfers, evals), zero hosting required | Experiment | [Justin Crowe](https://github.com/justincrowe-hub) |
 | [System Prompt Testing with Vapi Simulations](projects/system-prompt-testing-simulations) | A controlled comparison of three reservation voice agents that share the same model, voice, tools, and business facts while using different system-prompt strategies - this repo supplements a talk given at TestMu conf in Aug 2026 | Event Demo | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
 | [Ukelele MCP Teacher](projects/ukulele-mcp-teacher) | Ukulele MCP Teacher is a hands-free practice app for the beginner ukulele chords `C`, `Am`, `F`, `G`, and `G7`. Lead by a Vapi assistant instructor, visualized cards via MCP, strums into the browser microphone, and receives immediate feedback. | Experiment | [Amanda Martin](https://www.linkedin.com/in/amandamartin-dev) |
@@ -40,4 +41,4 @@ Found a leaked credential or a security issue? See [SECURITY.md](SECURITY.md). D
 
 ## License
 
-MIT — see [LICENSE](LICENSE). 
+MIT — see [LICENSE](LICENSE).

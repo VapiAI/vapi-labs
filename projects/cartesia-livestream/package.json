@@ -1,0 +1,13 @@
+{
+  "name": "cartesia-livestream",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/push.mjs --check",
+    "push": "node scripts/push.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
