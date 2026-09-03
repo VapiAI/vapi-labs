@@ -1,6 +1,6 @@
 # Vapi Orders Agent
 
-> 🧪 **This is a showcase demo, not an officially supported Vapi product.** It is meant to inspire, not to be production ready.
+> 🧪 **This is an example repo** It is meant to educate and be a complementary resource to our documentation. It is unlikely to be production ready.
 
 A Vapi voice assistant that checks a retail catalog and creates simulated orders through a Cloudflare Worker. 
 
