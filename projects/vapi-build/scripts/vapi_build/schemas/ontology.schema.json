@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vapi-build ontology: authored by the model from cited evidence, checked by the host",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["domain", "types", "entities", "claims", "rules", "procedures", "goals", "capabilities", "observations", "issues"],
+  "properties": {
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "summary"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"},
+        "summary": {"$ref": "#/$defs/text"},
+        "callerRoles": {"type": "array", "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "types": {"type": "array", "items": {"$ref": "#/$defs/type"}},
+    "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "properties": {"type": "array", "items": {"$ref": "#/$defs/property"}},
+    "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+    "claims": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+    "rules": {"type": "array", "items": {"$ref": "#/$defs/rule"}},
+    "procedures": {"type": "array", "items": {"$ref": "#/$defs/procedure"}},
+    "goals": {"type": "array", "items": {"$ref": "#/$defs/goal"}},
+    "capabilities": {"type": "array", "items": {"$ref": "#/$defs/capability"}},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "issues": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+    "uncovered": {"type": "array", "items": {"$ref": "#/$defs/uncovered"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "id": {"type": "string", "pattern": "^(type|entity|property|relation|claim|rule|procedure|step|goal|capability|observation|issue):[a-z][a-z0-9-]{0,95}$"},
+    "ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "evidenceRef": {"type": "string", "pattern": "^evidence:[a-z][a-z0-9-]{0,95}$"},
+    "evidence": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceRef"}},
+    "status": {"enum": ["EXPLICIT", "INFERRED", "HYPOTHESIS"]},
+    "type": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "definition", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "definition": {"$ref": "#/$defs/text"},
+        "parents": {"$ref": "#/$defs/ids"}, "status": {"$ref": "#/$defs/status"}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "entity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "types", "definition", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "types": {"allOf": [{"$ref": "#/$defs/ids"}], "minItems": 1},
+        "definition": {"$ref": "#/$defs/text"}, "aliases": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "status": {"$ref": "#/$defs/status"}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "property": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "definition", "domain", "valueKind", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "definition": {"$ref": "#/$defs/text"},
+        "domain": {"allOf": [{"$ref": "#/$defs/ids"}], "minItems": 1},
+        "valueKind": {"enum": ["string", "number", "boolean", "date", "reference"]},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "relation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "definition", "from", "to", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "definition": {"$ref": "#/$defs/text"},
+        "from": {"allOf": [{"$ref": "#/$defs/ids"}], "minItems": 1}, "to": {"allOf": [{"$ref": "#/$defs/ids"}], "minItems": 1},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "claim": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "subject", "text", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "subject": {"$ref": "#/$defs/id"}, "text": {"$ref": "#/$defs/text"},
+        "polarity": {"enum": ["POSITIVE", "NEGATIVE"]}, "conditions": {"type": "string"},
+        "status": {"$ref": "#/$defs/status"}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "rule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "modality", "text", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "modality": {"enum": ["MUST", "MUST_NOT", "SHOULD", "SHOULD_NOT", "MAY"]},
+        "actors": {"$ref": "#/$defs/ids"}, "text": {"$ref": "#/$defs/text"}, "applies": {"type": "string"},
+        "exceptions": {"type": "array", "items": {"$ref": "#/$defs/text"}}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "step": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "instruction"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "instruction": {"$ref": "#/$defs/text"},
+        "capability": {"oneOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "next": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "procedure": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "steps", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "goals": {"$ref": "#/$defs/ids"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"}}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "goal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "definition", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "definition": {"$ref": "#/$defs/text"},
+        "callerPhrases": {"type": "array", "items": {"$ref": "#/$defs/text"}}, "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "alignedGoals": {"$ref": "#/$defs/ids"},
+        "preconditions": {"type": "string"}, "notes": {"type": "string"}
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "text", "evidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "text": {"$ref": "#/$defs/text"}, "goals": {"$ref": "#/$defs/ids"},
+        "count": {"type": "integer", "minimum": 0}, "sampleSize": {"type": "integer", "minimum": 0},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "issue": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "severity", "description"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["CONFLICT", "AMBIGUITY", "MISSING_EVIDENCE", "UNSUPPORTED_INFERENCE", "COVERAGE_GAP", "CAPABILITY_GAP", "FRAMEWORK_GAP"]},
+        "severity": {"enum": ["INFO", "WARNING", "CRITICAL"]}, "description": {"$ref": "#/$defs/text"},
+        "records": {"$ref": "#/$defs/ids"}, "evidence": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceRef"}}
+      }
+    },
+    "uncovered": {
+      "type": "object", "additionalProperties": false,
+      "required": ["segment", "reason"],
+      "properties": {"segment": {"type": "string", "pattern": "^segment:[a-z][a-z0-9-]{0,95}$"}, "reason": {"$ref": "#/$defs/text"}}
+    }
+  }
+}

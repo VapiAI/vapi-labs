@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+# Project workspaces hold customer material; keep them out of the repo.
+projects/
+workspaces/

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vapi Build"
+  short_description: "Build a complete Vapi agent from an organization's own material."
+  default_prompt: "Use $vapi-build to build a Vapi voice agent from my website, knowledge articles, call transcripts, and OpenAPI spec."
+policy:
+  allow_implicit_invocation: false

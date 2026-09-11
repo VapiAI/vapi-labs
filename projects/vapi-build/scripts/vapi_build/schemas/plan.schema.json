@@ -1,0 +1,803 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vapi-build agent plan: what the agent handles, with which knowledge and tools",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent",
+    "jobs",
+    "tools",
+    "knowledge",
+    "assistants"
+  ],
+  "properties": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "purpose"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "purpose": {
+          "$ref": "#/$defs/text"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string",
+          "default": "en"
+        },
+        "allowPrivileged": {
+          "type": "boolean"
+        },
+        "topology": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "choice",
+            "why"
+          ],
+          "properties": {
+            "choice": {
+              "enum": [
+                "single",
+                "squad"
+              ]
+            },
+            "why": {
+              "type": "string",
+              "minLength": 20
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "serverUrl": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "model": {
+          "type": "object",
+          "required": [
+            "provider",
+            "model"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "temperature": {
+              "type": "number"
+            },
+            "maxTokens": {
+              "type": "integer"
+            }
+          }
+        },
+        "voice": {
+          "type": "object",
+          "required": [
+            "provider",
+            "voiceId"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "voiceId": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "transcriber": {
+          "type": "object",
+          "required": [
+            "provider"
+          ],
+          "additionalProperties": true
+        }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/job"
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tool"
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeSourceDocuments": {
+          "type": "boolean"
+        },
+        "includeWebsitePages": {
+          "type": "boolean"
+        },
+        "includeDomainGuide": {
+          "type": "boolean"
+        },
+        "excludeLocators": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "assistants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/assistant"
+      }
+    },
+    "squad": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry"
+      ],
+      "properties": {
+        "entry": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/test"
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "what",
+          "why"
+        ],
+        "properties": {
+          "what": {
+            "$ref": "#/$defs/text"
+          },
+          "why": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "structuredOutputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/structuredOutput"
+      }
+    },
+    "simulations": {
+      "$ref": "#/$defs/simulations"
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "ontologyRef": {
+      "type": "string",
+      "pattern": "^(type|entity|claim|rule|procedure|goal|observation|capability):[a-z][a-z0-9-]{0,95}$"
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "goals",
+        "handling"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^job:[a-z][a-z0-9-]{0,95}$"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "goals": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^goal:[a-z][a-z0-9-]{0,95}$"
+          }
+        },
+        "handling": {
+          "enum": [
+            "ANSWER",
+            "GUIDED_PROCESS",
+            "TOOL_ACTION",
+            "HANDOFF",
+            "DECLINE"
+          ]
+        },
+        "knowledge": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ontologyRef"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "description": {
+                "$ref": "#/$defs/text"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "confirm": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "safeguards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "escalation": {
+          "type": "string"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "caller",
+              "agent"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "caller": {
+                "$ref": "#/$defs/text"
+              },
+              "agent": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^evidence:[a-z][a-z0-9-]{0,95}$"
+          }
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "description"
+      ],
+      "properties": {
+        "operationId": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]{1,40}$"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "NONE",
+                "VAPI_CREDENTIAL",
+                "HEADER_ENV"
+              ]
+            },
+            "credentialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "env": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+            },
+            "headerName": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]{1,64}$"
+            },
+            "prefix": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        },
+        "headers": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9-]{1,64}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "confirmBeforeCall": {
+          "type": "boolean"
+        },
+        "skipConfirmationReason": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 300
+        },
+        "startMessage": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "extract": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,39}$"
+          }
+        },
+        "staticParameters": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "description": "Body fields the model never fills: fixed values or Liquid, e.g. phone → {{customer.number}} (the caller's ANI)."
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "assistant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "systemPrompt",
+        "jobs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,40}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "systemPrompt": {
+          "type": "string",
+          "minLength": 40
+        },
+        "firstMessage": {
+          "type": "string"
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^job:[a-z][a-z0-9-]{0,95}$"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "knowledge": {
+          "type": "boolean"
+        },
+        "handoffTo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "assistant",
+              "when"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "assistant": {
+                "$ref": "#/$defs/text"
+              },
+              "when": {
+                "$ref": "#/$defs/text"
+              },
+              "carry": {
+                "type": "object",
+                "propertyNames": {
+                  "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,39}$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Variables the destination receives, extracted from the conversation: name → what it holds (e.g. customerId → the verified customer's record id)."
+              }
+            }
+          }
+        }
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scenario",
+        "callerOpening",
+        "expect"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^test:[a-z][a-z0-9-]{0,95}$"
+        },
+        "scenario": {
+          "$ref": "#/$defs/text"
+        },
+        "callerOpening": {
+          "$ref": "#/$defs/text"
+        },
+        "expect": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "mustNot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "followUps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^job:[a-z][a-z0-9-]{0,95}$"
+          }
+        }
+      }
+    },
+    "structuredOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "schema"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^output:[a-z][a-z0-9-]{0,95}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "enum": [
+            "ai"
+          ]
+        },
+        "schema": {
+          "type": "object",
+          "required": [
+            "type"
+          ]
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^job:[a-z][a-z0-9-]{0,95}$"
+          }
+        },
+        "assistants": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,40}$"
+          }
+        }
+      }
+    },
+    "simulations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "personalities",
+        "scenarios"
+      ],
+      "properties": {
+        "suiteName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "transport": {
+          "enum": [
+            "vapi.webchat",
+            "vapi.websocket"
+          ]
+        },
+        "personalities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/personality"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        }
+      }
+    },
+    "personality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "prompt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^personality:[a-z][a-z0-9-]{0,95}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 40
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "personality",
+        "instructions",
+        "evaluations"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^scenario:[a-z][a-z0-9-]{0,95}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "personality": {
+          "type": "string",
+          "pattern": "^personality:[a-z][a-z0-9-]{0,95}$"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 40
+        },
+        "evaluations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evaluation"
+          }
+        },
+        "toolMocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/toolMock"
+          }
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^job:[a-z][a-z0-9-]{0,95}$"
+          }
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string",
+          "pattern": "^output:[a-z][a-z0-9-]{0,95}$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "boolean",
+                "string",
+                "number",
+                "integer"
+              ]
+            }
+          }
+        },
+        "comparator": {
+          "enum": [
+            "=",
+            "!=",
+            ">",
+            "<",
+            ">=",
+            "<="
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "toolMock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "result"
+      ],
+      "properties": {
+        "tool": {
+          "$ref": "#/$defs/text"
+        },
+        "result": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
