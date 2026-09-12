@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import __version__, compile as compiler, extract, keyfile, ontology, plan, preview, render, sources, vapi
+from . import __version__, compile as compiler, demo as demos, extract, keyfile, ontology, plan, preview, render, sources, vapi
 from .workspace import BuildError, Workspace, read_json
 
 DEFAULT_ROOT = "~/vapi-build-projects"
@@ -34,6 +34,18 @@ def cmd_doctor(args) -> int:
 
 
 def cmd_init(args) -> int:
+    if args.demo:
+        demo = demos.get(args.demo)
+        name = args.name or demo["name"]
+        root = args.workspace or str(Path(DEFAULT_ROOT).expanduser() / f"demo-{demo['id']}")
+        workspace = Workspace.create(root, name)
+        registered = demos.register(workspace, demo["id"])
+        print(f"Created demo project “{name}” at {workspace.root} and registered {len(registered)} sources; nothing else may be added to it.")
+        print(demos.card(demo))
+        print("Next: `fetch`, then `extract`. Use the demo customers above in simulations and chat tests; tell the user these are published synthetic credentials.")
+        return 0
+    if not args.name:
+        raise BuildError("Give the project a name, or use --demo <id> to build from a sample dataset (`demo list`).")
     root = args.workspace or str(Path(DEFAULT_ROOT).expanduser() / _slug(args.name))
     workspace = Workspace.create(root, args.name)
     if args.aws_profile:
@@ -41,6 +53,16 @@ def cmd_init(args) -> int:
         workspace.save()
     print(f"Created project “{args.name}” at {workspace.root}")
     print("Next: register sources with `add`, then `fetch`.")
+    return 0
+
+
+def cmd_demo(args) -> int:
+    if args.action == "list":
+        for demo in demos.DEMOS.values():
+            print(f"  {demo['id']}: {demo['name']} — {demo['summary'].split('.')[0]}.")
+        print("Start one with `init --demo <id>`.")
+        return 0
+    print(demos.card(demos.get(args.demo_id)))
     return 0
 
 
@@ -339,7 +361,7 @@ def cmd_verify(args) -> int:
 
 def cmd_status(args) -> int:
     workspace = _workspace(args)
-    print(f"Project “{workspace.project['name']}” at {workspace.root}")
+    print(f"Project “{workspace.project['name']}” at {workspace.root}" + (f" · DEMO {workspace.project['demo']} (synthetic data only)" if workspace.project.get("demo") else ""))
     for source in workspace.sources():
         fetched = source.get("fetched")
         print(f"  {source['id']}: {source['location']}" + (f" · fetched {fetched['itemCount']} items" if fetched else " · not fetched"))
@@ -386,11 +408,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("doctor", help="check local prerequisites").set_defaults(func=cmd_doctor)
 
-    p = sub.add_parser("init", help="create a project workspace")
-    p.add_argument("name")
+    p = sub.add_parser("init", help="create a project workspace (or a demo workspace with every sample source registered)")
+    p.add_argument("name", nargs="?")
     p.add_argument("--workspace", help=f"directory for this project (default {DEFAULT_ROOT}/<slug>)")
     p.add_argument("--aws-profile")
+    p.add_argument("--demo", metavar="ID", help="build from a sample dataset instead of the user's material; see `demo list`")
     p.set_defaults(func=cmd_init)
+
+    p = sub.add_parser("demo", help="sample datasets: list, or show one (sources, auth, published synthetic credentials)")
+    p.add_argument("action", choices=("list", "show"))
+    p.add_argument("demo_id", nargs="?", default="standard-charter")
+    p.set_defaults(func=cmd_demo)
 
     p = sub.add_parser("add", help="register raw material: website | knowledge | transcripts | openapi")
     p.add_argument("workspace")

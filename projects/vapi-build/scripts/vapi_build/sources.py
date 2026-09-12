@@ -115,8 +115,18 @@ def default_fetch(url: str) -> tuple[bytes, str, str]:
 # --------------------------------------------------------------------------- registration
 
 def add_source(workspace: Workspace, role: str, location: str, **options: Any) -> dict[str, Any]:
+    from . import demo as demos  # local import: demo registers through this function
+
     if role not in ROLES:
         raise BuildError(f"Role must be one of {', '.join(ROLES)}.")
+    # Demo data and a user's own material never share a workspace, in either direction.
+    active = workspace.project.get("demo")
+    owner = demos.owning_demo(location)
+    if active and not demos.is_demo_source(demos.get(active), role, location):
+        raise BuildError(f"This is a {demos.get(active)['name']} demo workspace; it holds only the demo sources. Start a new workspace (`init`) for your own material.")
+    if not active and owner is not None:
+        raise BuildError(f"{location} is part of the {owner['name']} sample dataset. To build from it, start a fresh workspace with `init --demo {owner['id']}`; "
+                         "demo data is never mixed into a workspace with your own material.")
     kind = location_kind(location)
     if kind == "local":
         path = Path(location).expanduser()
@@ -294,6 +304,15 @@ def _s3_client(workspace: Workspace, factory: Callable[[], Any] | None):
 
     profile = workspace.project.get("awsProfile")
     session = boto3.Session(profile_name=profile) if profile else boto3.Session()
+    if workspace.project.get("s3Anonymous") or (not profile and session.get_credentials() is None):
+        # Public buckets (the sample datasets) need no credentials; unsigned requests also keep a demo
+        # from ever using whatever AWS identity happens to be on the machine.
+        from botocore import UNSIGNED
+        from botocore.config import Config
+
+        # Static placeholder credentials keep botocore away from the machine's provider chain; UNSIGNED means they are never sent.
+        anonymous = boto3.Session(aws_access_key_id="anonymous", aws_secret_access_key="anonymous", region_name=session.region_name or "us-east-1")
+        return anonymous.client("s3", config=Config(signature_version=UNSIGNED))
     return session.client("s3")
 
 

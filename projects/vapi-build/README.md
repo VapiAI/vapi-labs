@@ -20,6 +20,10 @@ I built it to find out how far an agent can get from source material to a tested
 
 Approvals are bound to content digests: a changed ontology invalidates the plan, a changed plan invalidates the build, and `apply` refuses stale builds. Details for the agent are in [SKILL.md](SKILL.md) and `references/`.
 
+## Try it on the sample dataset
+
+No material of your own? Say you want the sample. The skill runs `init --demo standard-charter`, which registers a fictional bank end to end: the web site and API at `bank.standardcharter.co` (callers are identified by phone and verified with a four-digit PIN), its knowledge, call-center transcripts, and speech IVR logs from the public bucket `s3://standardcharter-vapi-build`. The demo card lists synthetic customers with phone, PIN, email, and password, and the bank's MCP server with its bearer, all published on purpose. A demo workspace never accepts other sources, and a workspace with your own material never accepts the demo's. The bank itself lives in the `standardcharter_only` repository and runs in Vapi's AWS account.
+
 ## Setup
 
 ### Prerequisites

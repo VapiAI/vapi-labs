@@ -1,6 +1,6 @@
 ---
 name: vapi-build
-description: Build a complete, working Vapi voice agent from an organization's own raw material named in conversation, such as a website, knowledge articles (files, URLs, or S3), sampled call transcripts or speech IVR logs, and an OpenAPI spec. The agent gathers the inputs by asking, then does every step itself. It fetches and pins evidence, authors an evidence-linked ontology and an agent plan (single assistant or squad with a front-door authenticator, structured outputs, simulations), shows one review page for the user's yes, creates the Vapi knowledge base, tools, structured outputs, assistants, squad, and simulation suite, and exercises the result through Vapi chat and simulations. Use when someone wants an agent built from their own material; not for hand-editing an existing assistant.
+description: Build a complete, working Vapi voice agent from an organization's own raw material named in conversation, such as a website, knowledge articles (files, URLs, or S3), sampled call transcripts or speech IVR logs, and an OpenAPI spec. The agent gathers the inputs by asking, then does every step itself. It fetches and pins evidence, authors an evidence-linked ontology and an agent plan (single assistant or squad with a front-door authenticator, structured outputs, simulations), shows one review page for the user's yes, creates the Vapi knowledge base, tools, structured outputs, assistants, squad, and simulation suite, and exercises the result through Vapi chat and simulations. Ships a synthetic sample dataset (Standard Charter Bank: site, API with phone-plus-PIN caller verification, knowledge, transcripts, IVR logs) for people without material. Use when someone wants an agent built from their own material or wants to try the sample; not for hand-editing an existing assistant.
 license: MIT
 compatibility: Requires Python 3.11+ with jsonschema (PyYAML for YAML sources, boto3 for S3 sources), internet access, and a Vapi private API key (VAPI_API_KEY) for apply, test, simulate, and teardown. Everything up to compile runs without a key.
 metadata:
@@ -57,6 +57,8 @@ Tokens the agent's tools will need are saved the same way. Everything up to `com
 
 Ask everything in a single message (use a structured question tool when one is available). Do not start fetching until you have at least one source.
 
+The first question is whether they are building from **their own material** or want to **try the sample dataset**. If the sample: skip every question below and run `$VB init --demo standard-charter`, which creates the workspace and registers all five demo sources itself (the bank's website and OpenAPI, its knowledge on S3, call-center transcripts, and speech IVR logs, all synthetic). The command prints the demo card: how caller authentication works and the published demo customers (phone and PIN for the voice front door, email and password for the web site) and the bank's MCP server URL and bearer. Tell the user these credentials are synthetic and public by design, then continue at Fetch and extract. A demo workspace accepts no other sources and an ordinary workspace refuses the demo sources, so the two are never mixed; someone who wants to switch starts a new workspace.
+
 - A short name for the project.
 - Website URL, if any. Same-host crawl, 40 pages by default; ask only if they want more or extra hostnames.
 - Knowledge: local files or folders, HTTPS URLs, or `s3://bucket/prefix`. Ask whether any are internal or employee-only (excluded from a customer-facing knowledge base).
@@ -72,7 +74,7 @@ Confirm what you heard in two or three lines, then proceed without waiting.
 ## Fetch and extract
 
 ```bash
-$VB init "<name>" --workspace ~/vapi-build-projects/<slug> [--aws-profile <profile>]
+$VB init "<name>" --workspace ~/vapi-build-projects/<slug> [--aws-profile <profile>]   # or: $VB init --demo standard-charter
 $VB add <ws> website <url> [--max-pages N] [--allowed-host h]
 $VB add <ws> openapi <url-or-file> --server-url <base url>
 $VB add <ws> knowledge <location>            # repeat per location; --authority SUPPORTING for informal material
@@ -102,7 +104,7 @@ Write `<ws>/plan/plan.json` per the plan guide. Decide, and record in the plan:
 
 - **Topology.** One assistant or a squad. Break a larger application into specialists when jobs differ in domain or persona, in tool or credential access, or need isolated context; never one member per conversational step. When the API can identify callers and the agent will call authenticated operations, a **front-door** member that looks the caller up by ANI, asks for their PIN, and hands off with the verified customer id is usually the first boundary. Record `agent.topology` with the choice and why.
 - **Structured outputs.** What every call should yield for review: at least a call-outcome record (intent, resolved, summary), plus one per confirmed write (booking made, payment taken) and any fields the business needs downstream.
-- **Simulations.** One smoke scenario per job with a personality drawn from the transcripts' caller language, each judged by structured outputs; every write tool a scenario could reach is mocked.
+- **Simulations.** One smoke scenario per job with a personality drawn from the transcripts' caller language, each judged by structured outputs; every write tool a scenario could reach is mocked. In a demo workspace, put a demo customer's phone and PIN in the scenario instructions and the chat tests so the front door is exercised for real; the lookup and verify operations are reads and stay live.
 
 ```bash
 $VB check plan <ws>
@@ -140,6 +142,7 @@ Judge each chat transcript against its `expect` and `mustNot` lines and report a
 | `doctor` | dependencies, where the Vapi key was found, AWS presence |
 | `secrets find` / `secrets set NAME --from-env NAME` or `--from-file PATH --var NAME` `[--verify]` / `secrets list` / `secrets prompt NAME` | locate and copy keys and tokens into the key file without ever showing a value |
 | `init`, `add`, `fetch`, `extract` | workspace, sources, raw material, evidence ledger and packets |
+| `init --demo <id>`, `demo list`, `demo show <id>` | a demo workspace with every sample source registered; the demo card with its published synthetic credentials |
 | `merge` | fold `ontology/fragments/*.json` into `ontology/ontology.json` |
 | `check ontology`, `check plan` | validate; the plan check also covers topology, structured outputs, and simulations |
 | `render <ws>` | write `review.html` with Ontology, Plan, and Build tabs |
