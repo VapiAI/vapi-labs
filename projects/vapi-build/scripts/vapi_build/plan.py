@@ -133,10 +133,12 @@ def _check_simulations(plan: dict[str, Any], jobs: dict[str, dict[str, Any]], to
                 errors.append(f"{scenario['id']} mocks {mock['tool']}, which is not a declared tool.")
             mocked.add(mock["tool"])
         # A simulation calls the agent's real tools unless they are mocked; never let a test write to the live API.
+        # Login-style calls (skipConfirmationReason: verification, lookup by phone) change nothing and may stay live so the front door is tested for real.
         for job in scenario.get("jobs", []):
             for operation_id in jobs.get(job, {}).get("tools", []):
                 classification = operations.get(operation_id, {}).get("classification", {})
-                if (classification.get("write") or classification.get("confirmBeforeCall")) and operation_id not in mocked:
+                tool = tools_by_operation.get(operation_id, {})
+                if (classification.get("write") or classification.get("confirmBeforeCall")) and not tool.get("skipConfirmationReason") and operation_id not in mocked:
                     errors.append(f"{scenario['id']} exercises {job}, whose tool {operation_id} writes to the live API; add a toolMock for it.")
 
 

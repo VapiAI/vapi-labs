@@ -508,8 +508,9 @@ def run_tests(workspace: Workspace, client: VapiClient) -> dict[str, Any]:
             chat = client.request("POST", "/chat", body) or {}
             previous_chat = chat.get("id")
             outputs = chat.get("output") or []
-            turns.append({"caller": utterance, "agent": [_message_text(m) for m in outputs if not isinstance(m, dict) or m.get("role") in (None, "assistant", "bot")],
-                          "raw": outputs})
+            spoken = [_message_text(m) for m in outputs if not isinstance(m, dict) or m.get("role") in (None, "assistant", "bot")]
+            # Tool-call turns carry no words; keep only what the caller would have heard.
+            turns.append({"caller": utterance, "agent": [s for s in spoken if s.strip()], "raw": outputs})
         results.append({"id": test["id"], "scenario": test["scenario"], "expect": test["expect"], "mustNot": test.get("mustNot", []), "turns": turns, "chatId": previous_chat})
     report = {"testedAt": utc_now(), "target": target, "results": results}
     write_json(workspace.path("vapi", "test-results.json"), report)
