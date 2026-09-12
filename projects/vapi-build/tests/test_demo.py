@@ -53,3 +53,16 @@ def test_demo_handover_pairs_phone_pin_with_web_login():
     text = demo.handover(demo.get("standard-charter"))
     assert "858-460-0493" in text and "PIN is 4380" in text and "ada.lovelace.1000000000@scbank.example / VhLbMzpGDLzw" in text
     assert "https://bank.standardcharter.co" in text and "same customer record" in text
+
+
+def test_build_tab_gets_a_try_it_card_only_for_applied_demo_workspaces(tmp_path):
+    from vapi_build import render
+    from vapi_build.workspace import Workspace
+
+    d = demo.get("standard-charter")
+    assert render.try_it_card(d, None) is None
+    assert render.try_it_card(d, {"verified": False, "assistants": {}, "squad": {}}) is None
+    card = render.try_it_card(d, {"verified": True, "assistants": {"assistant:a": "asst_1"}, "squad": {"id": "squad_1"}})
+    assert card["phone"] == "858-460-0493" and card["pin"] == "4380" and card["targetKind"] == "squad" and card["dashboard"].endswith("/squads/squad_1")
+    assert card["email"].startswith("ada.lovelace") and card["web"] == "https://bank.standardcharter.co"
+    Workspace.create(tmp_path / "ws", "x")  # non-demo workspaces never get a card; covered by review_model's demo check

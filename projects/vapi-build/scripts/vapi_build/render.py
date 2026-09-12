@@ -615,9 +615,24 @@ def _flatten_receipts(receipts: dict[str, Any]) -> list[tuple[str, str]]:
     return out
 
 
-def build_model(build: dict[str, Any], receipts: dict[str, Any] | None, test_results: dict[str, Any] | None, simulation_results: dict[str, Any] | None) -> dict[str, Any]:
+def try_it_card(demo: dict[str, Any], receipts: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Demo workspaces only: how to try the applied agent as one synthetic customer, by voice and on the web, once it exists in Vapi."""
+    if not receipts or not receipts.get("verified"):
+        return None
+    c = demo["auth"]["customers"][0]
+    phone = c["phone"]
+    spoken = f"{phone[2:5]}-{phone[5:8]}-{phone[8:]}" if phone.startswith("+1") and len(phone) == 12 else phone
+    target = ("squad", receipts["squad"]["id"]) if receipts.get("squad", {}).get("id") else ("assistant", next(iter(receipts["assistants"].values()), ""))
+    return {"customer": c["name"], "phone": spoken, "pin": c["pin"], "web": demo["auth"]["web"].split(" ")[0], "email": c["email"], "password": c["password"],
+            "targetKind": target[0], "targetId": target[1], "dashboard": f"https://dashboard.vapi.ai/{'squads' if target[0] == 'squad' else 'assistants'}/{target[1]}",
+            "note": "Synthetic demo customer, published on purpose. One record behind both channels: a transfer made by voice shows in the web account activity."}
+
+
+def build_model(build: dict[str, Any], receipts: dict[str, Any] | None, test_results: dict[str, Any] | None, simulation_results: dict[str, Any] | None,
+                try_it: dict[str, Any] | None = None) -> dict[str, Any]:
     sims = build.get("simulations")
     return {
+        "tryIt": try_it,
         "compiledAt": build.get("compiledAt"), "planDigest": build.get("planDigest"), "applied": bool(receipts and receipts.get("verified")),
         "knowledgeBase": {"name": build["knowledgeBase"]["name"], "files": [{"name": f["name"], "origin": f["origin"], "locator": f["locator"], "bytes": f["bytes"]} for f in build["knowledgeBase"]["files"]]},
         "tools": [{"name": t["payload"].get("name") or t["payload"].get("function", {}).get("name") or t["ref"], "method": "MCP" if t.get("mcp") else t["payload"].get("method"),
@@ -1155,7 +1170,20 @@ JS = r"""
   // ---------- build panel
   function makeBuild(B) {
     const root = el('section', { class: 'panel panel-build', 'data-panel': 'build' });
-    const P = { name: 'build', root, hasViews: false, renderDetail: () => { detail.innerHTML = ''; detail.append(el('div', { class: 'detail-empty' }, el('p', null, 'The Build tab lists exactly what compile produced and what apply created in Vapi.'))); } };
+    const P = { name: 'build', root, hasViews: false, renderDetail: () => {
+      detail.innerHTML = '';
+      const T = B && B.tryIt;
+      if (!T) { detail.append(el('div', { class: 'detail-empty' }, el('p', null, 'The Build tab lists exactly what compile produced and what apply created in Vapi.'))); return; }
+      const mono = v => el('div', { class: 'mono' }, v);
+      const link = href => el('a', { href, target: '_blank', rel: 'noopener' }, href);
+      detail.append(
+        el('div', { class: 'detail-head' }, el('div', { class: 'crumbs' }, el('span', { class: 'pill kind', style: '--c:var(--k-assistant)' }, 'Try it')), el('h2', null, `Call as ${T.customer}`), el('div', { class: 'id' }, `${T.targetKind} ${T.targetId}`)),
+        el('div', { class: 'detail-body' },
+          el('div', { class: 'field' }, el('h3', null, 'Open in the Vapi dashboard'), el('p', null, link(T.dashboard)), el('p', null, 'Use the talk button, or call the number the ' + T.targetKind + ' is attached to.')),
+          el('div', { class: 'field' }, el('h3', null, 'On the phone'), el('p', null, 'Say your number is'), mono(T.phone), el('p', null, 'and your PIN is'), mono(T.pin), el('p', null, 'Then ask for a balance, recent transactions, or to move money between checking and savings.')),
+          el('div', { class: 'field' }, el('h3', null, 'On the web, same customer'), el('p', null, link(T.web)), mono(`${T.email}\n${T.password}`)),
+          el('div', { class: 'field' }, el('h3', null, 'Note'), el('p', null, T.note))));
+    } };
     const o = el('div', { class: 'overview' }); root.append(o);
     if (!B) { o.append(el('p', { class: 'lede' }, 'Not compiled yet. Once the ontology and plan are approved, `compile` fills this tab with the exact knowledge files, tools, assistants, structured outputs, and simulations that will be created.')); return P; }
     o.append(el('p', { class: 'lede' }, `Compiled ${B.compiledAt}${B.applied ? ' · applied to Vapi and verified' : ' · not applied yet'}`));
@@ -1240,8 +1268,13 @@ def review_model(workspace: Workspace) -> dict[str, Any]:
     if plan_candidate and ontology_candidate:
         plan_view = plan_model(plan_candidate, ontology_candidate, checks["plan"])
     build = optional(workspace.path("vapi", "build.json"))
-    build_view = build_model(build, optional(workspace.path("vapi", "receipts.json")), optional(workspace.path("vapi", "test-results.json")),
-                             optional(workspace.path("vapi", "simulation-results.json"))) if build else None
+    receipts = optional(workspace.path("vapi", "receipts.json"))
+    try_it = None
+    if workspace.project.get("demo"):
+        from . import demo as demos
+
+        try_it = try_it_card(demos.get(workspace.project["demo"]), receipts)
+    build_view = build_model(build, receipts, optional(workspace.path("vapi", "test-results.json")), optional(workspace.path("vapi", "simulation-results.json")), try_it) if build else None
     default_tab = "build" if build_view and build_view["applied"] else "plan" if plan_view else "ontology"
     title = (plan_view or {}).get("title") or (ontology_view or {}).get("title") or workspace.project["name"]
     model = {"title": title, "defaultTab": default_tab, "tabs": {"ontology": ontology_view, "plan": plan_view, "build": build_view}, "checks": checks, "evidence": evidence}
