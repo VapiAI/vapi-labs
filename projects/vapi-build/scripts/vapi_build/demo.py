@@ -37,13 +37,13 @@ STANDARD_CHARTER = {
                "MCP: declare the server under mcpServers with auth {\"mode\": \"HEADER_ENV\", \"env\": \"STANDARD_CHARTER_MCP_TOKEN\"} and list it under the assistant's `mcp`; "
                "apply fills the bearer from the demo automatically, and the server's own tools (lookup by phone, verify PIN, accounts, transactions, transfers, help) verify the caller and remember the session for the call.",
         "customers": [
-            {"customer_id": 1000000000, "name": "Ada Lovelace", "phone": "+19990000000", "pin": "4380", "email": "ada.lovelace.1000000000@scbank.example", "password": "VhLbMzpGDLzw",
+            {"customer_id": 1000000000, "name": "Ada Lovelace", "phone": "+18584600493", "pin": "4380", "email": "ada.lovelace.1000000000@scbank.example", "password": "VhLbMzpGDLzw",
              "accounts": "checking, savings, credit card"},
-            {"customer_id": 1000000001, "name": "Grace Hopper", "phone": "+19990000001", "pin": "8053", "email": "grace.hopper.1000000001@scbank.example", "password": "LZzmZGAGj8DC",
+            {"customer_id": 1000000001, "name": "Grace Hopper", "phone": "+17133820810", "pin": "8053", "email": "grace.hopper.1000000001@scbank.example", "password": "LZzmZGAGj8DC",
              "accounts": "checking"},
-            {"customer_id": 1000000002, "name": "Alan Turing", "phone": "+19990000002", "pin": "7091", "email": "alan.turing.1000000002@scbank.example", "password": "Qzs4ZPk2iiLP",
+            {"customer_id": 1000000002, "name": "Alan Turing", "phone": "+14693041127", "pin": "7091", "email": "alan.turing.1000000002@scbank.example", "password": "Qzs4ZPk2iiLP",
              "accounts": "see listAccounts"},
-            {"customer_id": 1000000003, "name": "Katherine Johnson", "phone": "+19990000003", "pin": "6434", "email": "katherine.johnson.1000000003@scbank.example", "password": "82ciMPWx4eVe",
+            {"customer_id": 1000000003, "name": "Katherine Johnson", "phone": "+12132261444", "pin": "6434", "email": "katherine.johnson.1000000003@scbank.example", "password": "82ciMPWx4eVe",
              "accounts": "see listAccounts"},
         ],
         "mcp": {"url": "https://bank.standardcharter.co/mcp", "bearer": "scb_-bF5BCKF5oWPJV0jPjrfMJsdolY5Vzsh",
