@@ -178,6 +178,13 @@ def _system_prompt(assistant: dict[str, Any], plan: dict[str, Any], tools: dict[
                 lines.append("  Before calling it, read back every value you will send and wait for an explicit yes. Call it once; do not retry on your own.")
         lines.append("Only pass values the caller gave you or that an earlier tool returned. Never guess identifiers, amounts, or account details.")
         parts.append("\n".join(lines))
+    if assistant.get("mcp"):
+        servers = {m["id"]: m for m in plan.get("mcpServers", [])}
+        lines = ["# MCP servers"]
+        for server_id in assistant["mcp"]:
+            server = servers.get(server_id, {})
+            lines.append(f"- {server.get('name', server_id)}: {server.get('description', '')} Use its tools for these tasks; before any tool that changes something, read back the values and wait for an explicit yes.")
+        parts.append("\n".join(lines))
     if assistant.get("handoffTo"):
         lines = ["# Handoffs"]
         for handoff in assistant["handoffTo"]:
@@ -266,6 +273,16 @@ def compile_build(workspace: Workspace) -> dict[str, Any]:
             secret_headers.append({"name": tool["auth"].get("headerName") or "Authorization", "env": tool["auth"]["env"], "prefix": tool["auth"].get("prefix", "Bearer ")})
         tool_records.append({"ref": f"tool:{tool['name']}", "operationId": tool["operationId"], "payload": _tool_payload(tool, server_url), "secretHeaders": secret_headers})
 
+    # MCP servers become Vapi `mcp` tools: the model sees the server's own tools at call time. A bearer is injected
+    # into server.headers at apply time from the key file (or the demo's published token), never written here.
+    for server in plan.get("mcpServers", []):
+        payload = {"type": "mcp", "function": {"name": server["name"], "description": server["description"]}, "server": {"url": server["url"]},
+                   "metadata": {"protocol": server["protocol"]}}
+        secret_headers = []
+        if server["auth"]["mode"] == "HEADER_ENV":
+            secret_headers.append({"name": server["auth"].get("headerName") or "Authorization", "env": server["auth"]["env"], "prefix": server["auth"].get("prefix", "Bearer ")})
+        tool_records.append({"ref": server["id"], "mcp": True, "payload": payload, "secretHeaders": secret_headers})
+
     assistant_records = []
     names = {assistant["id"]: assistant["name"] for assistant in plan["assistants"]}
     for assistant in plan["assistants"]:
@@ -284,7 +301,7 @@ def compile_build(workspace: Workspace) -> dict[str, Any]:
         }
         if assistant.get("firstMessage"):
             payload["firstMessage"] = assistant["firstMessage"]
-        assistant_records.append({"ref": f"assistant:{assistant['id']}", "payload": payload, "toolRefs": [f"tool:{name}" for name in tool_names],
+        assistant_records.append({"ref": f"assistant:{assistant['id']}", "payload": payload, "toolRefs": [f"tool:{name}" for name in tool_names] + list(assistant.get("mcp", [])),
                                   "knowledge": assistant.get("knowledge", True),
                                   "outputRefs": [output["id"] for output in plan.get("structuredOutputs", []) if assistant["id"] in output["assistants"]]})
     # Structured outputs: one saved definition each; apply attaches them through artifactPlan.structuredOutputIds.
@@ -360,7 +377,10 @@ def render_build_summary(build: dict[str, Any]) -> str:
         auth = "".join(f" · {h['name']} header from key-file variable {h['env']}" for h in tool.get("secretHeaders", []))
         if payload.get("credentialId"):
             auth += f" · credentialId {payload['credentialId']}"
-        lines.append(f"- {payload['name']}: {payload['method']} {payload['url']}{auth}")
+        if tool.get("mcp"):
+            lines.append(f"- {payload['function']['name']}: MCP {payload['server']['url']} ({payload['metadata']['protocol']}){auth}")
+        else:
+            lines.append(f"- {payload['name']}: {payload['method']} {payload['url']}{auth}")
     lines += ["", f"## Assistants ({len(build['assistants'])})"]
     for assistant in build["assistants"]:
         lines.append(f"- {assistant['payload']['name']}: {len(assistant['toolRefs'])} API tools" + (" + knowledge base" if assistant["knowledge"] else ""))

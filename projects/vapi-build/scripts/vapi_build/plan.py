@@ -260,6 +260,21 @@ def check_plan(workspace: Workspace) -> dict[str, Any]:
         if job["handling"] == "TOOL_ACTION" and not job.get("tools"):
             errors.append(f"{job['id']} is a TOOL_ACTION job but lists no tools.")
 
+    mcp_servers: dict[str, dict[str, Any]] = {}
+    for server in plan.get("mcpServers", []):
+        if server["id"] in mcp_servers:
+            errors.append(f"MCP server {server['id']} is listed twice.")
+        mcp_servers[server["id"]] = server
+        if server["name"] in taken:
+            errors.append(f"MCP server name {server['name']} collides with a tool name.")
+        taken.add(server["name"])
+        auth = server.get("auth", {"mode": "NONE"})
+        if auth["mode"] == "HEADER_ENV":
+            if not auth.get("env"):
+                errors.append(f"{server['id']} auth HEADER_ENV needs `env`: the variable holding the server's bearer.")
+            elif auth["env"] in RESERVED_ENV or auth["env"].startswith(("AWS_", "ANTHROPIC_", "OPENAI_", "GITHUB_", "VAPI_")) or "SECRET" in auth["env"]:
+                errors.append(f"{server['id']} names {auth['env']}, which is a platform or provider secret; use a variable created for this server.")
+
     assistant_ids = [assistant["id"] for assistant in plan["assistants"]]
     if len(set(assistant_ids)) != len(assistant_ids):
         errors.append("Assistant IDs must be unique.")
@@ -277,6 +292,9 @@ def check_plan(workspace: Workspace) -> dict[str, Any]:
         for operation_id in assistant.get("tools", []):
             if operation_id not in tools_by_operation:
                 errors.append(f"Assistant {assistant['id']} uses undeclared tool {operation_id}.")
+        for server_id in assistant.get("mcp", []):
+            if server_id not in mcp_servers:
+                errors.append(f"Assistant {assistant['id']} uses undeclared MCP server {server_id}.")
         for handoff in assistant.get("handoffTo", []):
             if handoff["assistant"] not in assistant_ids:
                 errors.append(f"Assistant {assistant['id']} hands off to unknown assistant {handoff['assistant']}.")
@@ -298,6 +316,10 @@ def check_plan(workspace: Workspace) -> dict[str, Any]:
         errors.append(f"The tools' server URL must use https, got {server_url}; set runtime.serverUrl.")
     runtime["serverUrl"] = server_url
     tool_operations = {operation_id: operations[operation_id] for operation_id in tools_by_operation}
+    used_servers = {m for a in plan["assistants"] for m in a.get("mcp", [])}
+    for server_id in mcp_servers:
+        if server_id not in used_servers:
+            warnings.append(f"MCP server {server_id} is declared but no assistant uses it.")
     used_tools = {t for a in plan["assistants"] for t in a.get("tools", [])}
     for operation_id in tools_by_operation:
         if operation_id not in used_tools:
@@ -313,6 +335,7 @@ def check_plan(workspace: Workspace) -> dict[str, Any]:
         "runtime": runtime,
         "knowledge": {**DEFAULT_KNOWLEDGE, **plan.get("knowledge", {})},
         "structuredOutputs": [{**o, "type": o.get("type", "ai"), "assistants": o.get("assistants") or list(assistant_ids)} for o in plan.get("structuredOutputs", [])],
+        "mcpServers": [{**m, "protocol": m.get("protocol", "shttp"), "auth": m.get("auth", {"mode": "NONE"})} for m in plan.get("mcpServers", [])],
         "resolvedTools": [{**tools_by_operation[op], "operation": {k: v for k, v in tool_operations[op].items() if k not in {"text"}}} for op in tools_by_operation],
         "ontologyDigest": ontology["digest"],
         "enabledOperations": sorted(f"{tool_operations[op]['method']} {tool_operations[op]['path']} ({op}) · risk {tool_operations[op]['classification']['risk']}"
@@ -372,6 +395,8 @@ def summarize(candidate: dict[str, Any], ontology: dict[str, Any]) -> str:
         op = tool["operation"]
         confirm = " · confirms before calling" if tool.get("confirmBeforeCall") else ""
         lines.append(f"- `{tool['name']}` → {op['method']} {op['path']} · risk {op['classification']['risk']} · auth {tool['auth']['mode']}{confirm}")
+    for server in candidate.get("mcpServers", []):
+        lines.append(f"- MCP `{server['name']}` → {server['url']} · auth {server['auth']['mode']} · the server's own tools, chosen by the model at call time")
     knowledge = candidate["knowledge"]
     lines += ["", "## Knowledge base", f"- source documents: {'yes' if knowledge['includeSourceDocuments'] else 'no'}; website pages: {'yes' if knowledge['includeWebsitePages'] else 'no'}; generated domain guide: {'yes' if knowledge['includeDomainGuide'] else 'no'}"]
     if knowledge.get("excludeLocators"):
@@ -380,7 +405,8 @@ def summarize(candidate: dict[str, Any], ontology: dict[str, Any]) -> str:
     lines += ["", "## Assistants" + (f" · {topology['choice']}: {topology['why']}" if topology else "")]
     for assistant in candidate["assistants"]:
         handoffs = f"; hands off to {', '.join(h['assistant'] for h in assistant.get('handoffTo', []))}" if assistant.get("handoffTo") else ""
-        lines.append(f"- **{assistant['name']}** ({assistant['id']}): jobs {', '.join(assistant['jobs'])}; tools {', '.join(assistant.get('tools', [])) or 'none'}; knowledge {'on' if assistant.get('knowledge', True) else 'off'}{handoffs}")
+        mcp = f"; MCP {', '.join(assistant['mcp'])}" if assistant.get("mcp") else ""
+        lines.append(f"- **{assistant['name']}** ({assistant['id']}): jobs {', '.join(assistant['jobs'])}; tools {', '.join(assistant.get('tools', [])) or 'none'}{mcp}; knowledge {'on' if assistant.get('knowledge', True) else 'off'}{handoffs}")
     if candidate.get("squad"):
         lines.append(f"- squad entry: {candidate['squad']['entry']}")
     if candidate.get("structuredOutputs"):

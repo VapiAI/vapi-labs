@@ -81,6 +81,10 @@ Do not create one member per conversational step; keep related steps in one memb
 - **Knowledge base**: source documents (including PDFs), website pages as Markdown, and the generated domain guide. Exclude internal or employee-only documents with `excludeLocators` when the audience is customers. Transcripts are never included.
 - **Assistants**: names are at most 40 characters and unique. Each `handoffTo` entry becomes a handoff tool and a squad destination; `carry` names the variables extracted for the destination. Prompts should name the jobs, the tone, what to verify before disclosing anything, and when to hand off. The compiler appends knowledge, tool, handoff, and exclusion sections automatically.
 
+## MCP servers
+
+When the organization exposes the same system as an MCP server, the plan may declare it under `mcpServers` and list it on an assistant's `mcp`. Each entry has an `id` (`mcp:…`), a tool `name` (letters, digits, `_`, `-`, at most 40), a `description` the model reads, an https `url`, optional `protocol` (`shttp` by default, or `sse`), and `auth`: `NONE` or `HEADER_ENV` with `env`, the key-file variable holding the bearer. Compile turns each into one Vapi `mcp` tool; the model discovers the server's own tools at call time, so the plan's `tools` list is not needed for what the server covers. Prefer REST operations when the plan needs the checker's per-operation risk classification and read-back rules (an MCP server's write tools are only governed by the prompt's read-back instruction), and MCP when the server already holds session state, as the Standard Charter demo's does after `confirm_verification`. Using both is fine when they cover different jobs. In the demo, `init --demo` prints the server URL and the variable name, and `apply` fills the bearer itself.
+
 ## Structured outputs
 
 Structured outputs are what Vapi extracts from every call after it ends, so every call yields reviewable data. Propose the smallest set the business would actually read, derived from the jobs:

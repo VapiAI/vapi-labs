@@ -128,6 +128,16 @@ def client_from_env(env: dict[str, str] | None = None, *, transport: Transport =
     return VapiClient(key, base_url=base, transport=transport)
 
 
+def demo_secrets(workspace: Workspace) -> dict[str, str]:
+    """Tokens a sample dataset publishes on purpose (its MCP bearer), keyed by the variable names its plan guide uses."""
+    demo_id = workspace.project.get("demo")
+    if not demo_id:
+        return {}
+    from . import demo as demos
+
+    return dict(demos.get(demo_id).get("secretsEnv", {}))
+
+
 def load_build(workspace: Workspace) -> dict[str, Any]:
     path = workspace.path("vapi", "build.json")
     if not path.exists():
@@ -162,6 +172,7 @@ def apply(workspace: Workspace, client: VapiClient, *, secrets: dict[str, str] |
     build = load_build(workspace)
     _check_build_is_current(workspace, build)
     secrets = load_env_file() if secrets is None else secrets
+    secrets = {**demo_secrets(workspace), **secrets}  # a demo's published tokens fill in unless the user saved their own
     receipts = load_receipts(workspace) or {"planDigest": build["planDigest"], "startedAt": utc_now(), "files": {}, "knowledgeBase": {}, "tools": {}, "assistants": {}, "squad": {}, "verified": False}
     receipts.setdefault("structuredOutputs", {})
     receipts.setdefault("simulations", {"personalities": {}, "scenarios": {}, "simulations": {}, "suite": {}})
@@ -229,8 +240,11 @@ def apply(workspace: Workspace, client: VapiClient, *, secrets: dict[str, str] |
             continue
         payload = json.loads(json.dumps(tool["payload"]))
         for header in tool.get("secretHeaders", []):
-            headers = payload.setdefault("headers", {"type": "object", "properties": {}})
-            headers["properties"][header["name"]] = {"type": "string", "value": f"{header['prefix']}{secrets[header['env']]}"}
+            if tool.get("mcp"):
+                payload["server"].setdefault("headers", {})[header["name"]] = f"{header['prefix']}{secrets[header['env']]}"
+            else:
+                headers = payload.setdefault("headers", {"type": "object", "properties": {}})
+                headers["properties"][header["name"]] = {"type": "string", "value": f"{header['prefix']}{secrets[header['env']]}"}
         created = client.request("POST", "/tool", payload)
         receipts["tools"][tool["ref"]] = created["id"]
         _save(workspace, receipts)

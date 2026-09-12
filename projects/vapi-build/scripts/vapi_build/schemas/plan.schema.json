@@ -203,6 +203,12 @@
     },
     "simulations": {
       "$ref": "#/$defs/simulations"
+    },
+    "mcpServers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mcpServer"
+      }
     }
   },
   "$defs": {
@@ -502,6 +508,13 @@
               }
             }
           }
+        },
+        "mcp": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^mcp:[a-z][a-z0-9-]{0,40}$"
+          }
         }
       }
     },
@@ -796,6 +809,66 @@
         },
         "result": {
           "type": "string"
+        }
+      }
+    },
+    "mcpServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "url"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^mcp:[a-z][a-z0-9-]{0,40}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]{1,40}$"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "protocol": {
+          "enum": [
+            "shttp",
+            "sse"
+          ]
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "NONE",
+                "HEADER_ENV"
+              ]
+            },
+            "env": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+            },
+            "headerName": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]{1,64}$"
+            },
+            "prefix": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
         }
       }
     }

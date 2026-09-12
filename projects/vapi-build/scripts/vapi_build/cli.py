@@ -220,7 +220,7 @@ def cmd_compile(args) -> int:
     print(compiler.render_build_summary(build))
     needed = sorted({header["env"] for tool in build["tools"] for header in tool.get("secretHeaders", [])})
     if needed:
-        saved = vapi.load_env_file()
+        saved = {**vapi.demo_secrets(workspace), **vapi.load_env_file()}
         for name in needed:
             print(f"  token {name}: {'present in' if saved.get(name) else 'MISSING from'} {vapi.KEY_FILE}")
         if any(not saved.get(name) for name in needed):

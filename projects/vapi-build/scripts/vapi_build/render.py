@@ -495,6 +495,14 @@ def plan_model(candidate: dict[str, Any], ontology: dict[str, Any], check: dict[
             details.append({"label": "Structured outputs", "kind": "links", "value": links(attached)})
         add(a["id"], "assistant", a["name"], details, graph=True, summary=a["systemPrompt"][:160])
 
+    for m in candidate.get("mcpServers", []):
+        auth = m.get("auth", {"mode": "NONE"})
+        details = [{"label": "Server", "kind": "mono", "value": f"{m['url']} ({m.get('protocol', 'shttp')})"},
+                   {"label": "What it offers", "kind": "text", "value": m["description"]},
+                   {"label": "Authentication", "kind": "text", "value": f"bearer from key-file variable {auth.get('env')}" if auth["mode"] == "HEADER_ENV" else "none"},
+                   {"label": "Used by", "kind": "links", "value": links([(a["id"], a["name"]) for a in assistants.values() if m["id"] in a.get("mcp", [])])}]
+        add(m["id"], "mcp", m["name"], details, graph=True, summary=m["url"])
+
     for o in outputs.values():
         details = [{"label": "What it records", "kind": "text", "value": o["description"]},
                    {"label": "Fields", "kind": "bullets", "value": _schema_fields(o["schema"])},
@@ -547,6 +555,8 @@ def plan_model(candidate: dict[str, Any], ontology: dict[str, Any], check: dict[
             edge(a["id"], jid, "owns")
         for t in a.get("tools", []):
             edge(a["id"], f"tool:{t}", "uses")
+        for m in a.get("mcp", []):
+            edge(a["id"], m, "uses")
         for h in a.get("handoffTo", []):
             edge(a["id"], h["assistant"], "handoff")
     for o in outputs.values():
@@ -572,7 +582,7 @@ def plan_model(candidate: dict[str, Any], ontology: dict[str, Any], check: dict[
         "kinds": [
             {"kind": "assistant", "label": "Assistants", "graph": True}, {"kind": "job", "label": "Jobs", "graph": True},
             {"kind": "goal", "label": "Caller goals", "graph": True}, {"kind": "tool", "label": "Tools", "graph": True},
-            {"kind": "output", "label": "Structured outputs", "graph": True},
+            {"kind": "mcp", "label": "MCP servers", "graph": True}, {"kind": "output", "label": "Structured outputs", "graph": True},
             {"kind": "scenario", "label": "Simulation scenarios", "graph": False}, {"kind": "personality", "label": "Simulation personalities", "graph": False},
             {"kind": "test", "label": "Chat tests", "graph": False}, {"kind": "exclusion", "label": "Out of scope", "graph": False},
             {"kind": "rule", "label": "Rules in prompts", "graph": False}, {"kind": "claim", "label": "Facts in prompts", "graph": False},
@@ -610,8 +620,8 @@ def build_model(build: dict[str, Any], receipts: dict[str, Any] | None, test_res
     return {
         "compiledAt": build.get("compiledAt"), "planDigest": build.get("planDigest"), "applied": bool(receipts and receipts.get("verified")),
         "knowledgeBase": {"name": build["knowledgeBase"]["name"], "files": [{"name": f["name"], "origin": f["origin"], "locator": f["locator"], "bytes": f["bytes"]} for f in build["knowledgeBase"]["files"]]},
-        "tools": [{"name": t["payload"].get("name") or t["ref"], "method": t["payload"].get("method"), "url": t["payload"].get("url"),
-                   "secretHeaders": [h["name"] for h in t.get("secretHeaders", [])]} for t in build.get("tools", [])],
+        "tools": [{"name": t["payload"].get("name") or t["payload"].get("function", {}).get("name") or t["ref"], "method": "MCP" if t.get("mcp") else t["payload"].get("method"),
+                   "url": t["payload"].get("url") or t["payload"].get("server", {}).get("url"), "secretHeaders": [h["name"] for h in t.get("secretHeaders", [])]} for t in build.get("tools", [])],
         "assistants": [{"name": a["payload"]["name"], "tools": [x.replace("tool:", "") for x in a.get("toolRefs", [])], "knowledge": a.get("knowledge", True),
                         "firstMessage": a["payload"].get("firstMessage"), "outputs": [x.split(":", 1)[1] for x in a.get("outputRefs", [])]} for a in build.get("assistants", [])],
         "squad": build.get("squad", {}).get("payload", {}).get("name") if build.get("squad") else None,
@@ -709,7 +719,7 @@ CSS = r"""
   --k-goal:#C2622B; --k-entity:#0E9E8A; --k-type:#3B6FB6; --k-procedure:#7A4FB5; --k-capability:#A8780A; --k-rule:#B03A48;
   --k-claim:#5F6C69; --k-observation:#8A6D3B; --k-issue:#B03A48; --k-property:#3B6FB6; --k-relation:#3B6FB6;
   --k-assistant:#0E6F66; --k-job:#C2622B; --k-tool:#A8780A; --k-test:#7A4FB5; --k-exclusion:#5F6C69;
-  --k-output:#3B6FB6; --k-scenario:#7A4FB5; --k-personality:#8A6D3B;
+  --k-output:#3B6FB6; --k-scenario:#7A4FB5; --k-personality:#8A6D3B; --k-mcp:#0E9E8A;
   --sev-critical:#B3372F; --sev-warning:#B7791F; --sev-info:#4A6FA5; --ok:#2E7D5B;
   --quote-bg:#F7F4EC; --quote-line:#E2D9C2;
   --sans:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -721,7 +731,7 @@ CSS = r"""
   --k-goal:#E48B55; --k-entity:#3FC4B0; --k-type:#6D9BE0; --k-procedure:#A98AE0; --k-capability:#E0B23A; --k-rule:#E0707D;
   --k-claim:#93A29D; --k-observation:#C9A26A; --k-issue:#E0707D; --k-property:#6D9BE0; --k-relation:#6D9BE0;
   --k-assistant:#52BBAF; --k-job:#E48B55; --k-tool:#E0B23A; --k-test:#A98AE0; --k-exclusion:#93A29D;
-  --k-output:#6D9BE0; --k-scenario:#A98AE0; --k-personality:#C9A26A;
+  --k-output:#6D9BE0; --k-scenario:#A98AE0; --k-personality:#C9A26A; --k-mcp:#3FC4B0;
   --sev-critical:#E06A62; --sev-warning:#E0A53F; --sev-info:#7FA3DA; --ok:#5DBE8F;
   --quote-bg:#1C1F1B; --quote-line:#3A3A2E;
   color-scheme: dark;
@@ -732,7 +742,7 @@ CSS = r"""
   --k-goal:#E48B55; --k-entity:#3FC4B0; --k-type:#6D9BE0; --k-procedure:#A98AE0; --k-capability:#E0B23A; --k-rule:#E0707D;
   --k-claim:#93A29D; --k-observation:#C9A26A; --k-issue:#E0707D; --k-property:#6D9BE0; --k-relation:#6D9BE0;
   --k-assistant:#52BBAF; --k-job:#E48B55; --k-tool:#E0B23A; --k-test:#A98AE0; --k-exclusion:#93A29D;
-  --k-output:#6D9BE0; --k-scenario:#A98AE0; --k-personality:#C9A26A;
+  --k-output:#6D9BE0; --k-scenario:#A98AE0; --k-personality:#C9A26A; --k-mcp:#3FC4B0;
   --sev-critical:#E06A62; --sev-warning:#E0A53F; --sev-info:#7FA3DA; --ok:#5DBE8F;
   --quote-bg:#1C1F1B; --quote-line:#3A3A2E;
   color-scheme: dark;

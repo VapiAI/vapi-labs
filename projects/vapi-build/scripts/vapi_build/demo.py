@@ -28,10 +28,14 @@ STANDARD_CHARTER = {
     # Hosts and buckets that belong to the demo; an ordinary workspace may not register them.
     "hosts": ("bank.standardcharter.co", "standardcharter.co", "standardcharter-vapi-build"),
     "s3Anonymous": True,
+    # Variable name a plan uses for the MCP bearer; apply fills it from the published token unless the user saved their own.
+    "secretsEnv": {"STANDARD_CHARTER_MCP_TOKEN": "scb_-bF5BCKF5oWPJV0jPjrfMJsdolY5Vzsh"},
     "auth": {
-        "how": "Call verifyCallerPin with the caller's phone and PIN; its response carries a `token`. Give that tool extract {\"sessionToken\": \"{{token}}\"} and put "
+        "how": "Two ways to reach the bank; ask the user which they want (REST endpoints, the MCP server, or both). REST: call verifyCallerPin with the caller's phone and PIN; its response carries a `token`. Give that tool extract {\"sessionToken\": \"{{token}}\"} and put "
                "headers {\"Authorization\": \"Bearer {{sessionToken}}\"} on listAccounts, getAccount, listTransactions, and createTransfer. lookupCallerByPhone takes "
-               "the caller's number ({{customer.number}}) as a staticParameter so the model never fills it; when the number is unknown, the agent asks for it.",
+               "the caller's number ({{customer.number}}) as a staticParameter so the model never fills it; when the number is unknown, the agent asks for it. "
+               "MCP: declare the server under mcpServers with auth {\"mode\": \"HEADER_ENV\", \"env\": \"STANDARD_CHARTER_MCP_TOKEN\"} and list it under the assistant's `mcp`; "
+               "apply fills the bearer from the demo automatically, and the server's own tools (lookup by phone, verify PIN, accounts, transactions, transfers, help) verify the caller and remember the session for the call.",
         "customers": [
             {"customer_id": 1000000000, "name": "Ada Lovelace", "phone": "+19990000000", "pin": "4380", "email": "ada.lovelace.1000000000@scbank.example", "password": "VhLbMzpGDLzw",
              "accounts": "checking, savings, credit card"},

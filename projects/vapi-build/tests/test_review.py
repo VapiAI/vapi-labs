@@ -209,3 +209,48 @@ def test_cli_render_open_and_preview_status(project, capsys, monkeypatch):
     assert main(["open", str(project.root)]) == 0
     assert "refreshed itself" in capsys.readouterr().out
     assert main(["simulate", str(project.root)]) == 2  # not applied
+
+
+def test_mcp_servers_become_vapi_mcp_tools_with_injected_bearer(project):
+    checked(project)
+    data = valid_plan()
+    data["mcpServers"] = [{"id": "mcp:bank", "name": "standard_charter_bank", "description": "The bank's own tools: verify the caller, accounts, transactions, transfers.",
+                           "url": "https://bank.example/mcp", "auth": {"mode": "HEADER_ENV", "env": "BANK_MCP_TOKEN"}}]
+    data["assistants"][0]["mcp"] = ["mcp:bank"]
+    project.path("plan", "plan.json").write_text(json.dumps(data))
+    report = plan.check_plan(project)
+    assert report["status"] == "CANDIDATE", report["errors"]
+    plan.approve_plan(project, by="tester")
+    build = compiler.compile_build(project)
+    mcp = next(t for t in build["tools"] if t["ref"] == "mcp:bank")
+    assert mcp["payload"] == {"type": "mcp", "function": {"name": "standard_charter_bank", "description": data["mcpServers"][0]["description"]},
+                              "server": {"url": "https://bank.example/mcp"}, "metadata": {"protocol": "shttp"}}
+    assert "mcp:bank" in build["assistants"][0]["toolRefs"] and "# MCP servers" in build["assistants"][0]["payload"]["model"]["messages"][0]["content"]
+    assert "BANK_MCP_TOKEN" not in json.dumps(build["tools"][0]["payload"])
+    fake = FakeVapi()
+    client = vapi.VapiClient("sk", transport=fake)
+    with pytest.raises(BuildError, match="BANK_MCP_TOKEN"):
+        vapi.apply(project, client, secrets={"FERRY_TOKEN": "t"}, sleep=lambda s: None)
+    receipts = vapi.apply(project, client, secrets={"FERRY_TOKEN": "t", "BANK_MCP_TOKEN": "mcp-secret"}, sleep=lambda s: None)
+    posted = next(b for m, p, b in fake.calls if p == "/tool" and b.get("type") == "mcp")
+    assert posted["server"]["headers"] == {"Authorization": "Bearer mcp-secret"} and "headers" not in posted
+    assistant_call = next(b for m, p, b in fake.calls if p == "/assistant")
+    assert receipts["tools"]["mcp:bank"] in assistant_call["model"]["toolIds"]
+    assert "mcp-secret" not in project.path("vapi", "receipts.json").read_text()
+    page = render.render_review(project).read_text()
+    assert '"kind":"mcp"' in page and '"method":"MCP"' in page
+    # undeclared server on an assistant is an error; a declared-but-unused one is a warning
+    data["assistants"][0]["mcp"] = ["mcp:missing"]
+    project.path("plan", "plan.json").write_text(json.dumps(data))
+    assert any("undeclared MCP server" in e for e in plan.check_plan(project)["errors"])
+
+
+def test_demo_workspace_fills_the_published_mcp_bearer(tmp_path):
+    from vapi_build import demo, vapi
+    from vapi_build.workspace import Workspace
+
+    workspace = Workspace.create(tmp_path / "ws", "x")
+    assert vapi.demo_secrets(workspace) == {}
+    workspace.project["demo"] = "standard-charter"
+    secrets = vapi.demo_secrets(workspace)
+    assert secrets["STANDARD_CHARTER_MCP_TOKEN"] == demo.get("standard-charter")["auth"]["mcp"]["bearer"]
