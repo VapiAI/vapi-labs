@@ -47,3 +47,9 @@ def test_anonymous_s3_client_for_public_buckets(tmp_path, monkeypatch):
 
     client = sources._s3_client(workspace, None)
     assert client.meta.config.signature_version is UNSIGNED and client.meta.service_model.service_name == "s3"
+
+
+def test_demo_handover_pairs_phone_pin_with_web_login():
+    text = demo.handover(demo.get("standard-charter"))
+    assert "858-460-0493" in text and "PIN is 4380" in text and "ada.lovelace.1000000000@scbank.example / VhLbMzpGDLzw" in text
+    assert "https://bank.standardcharter.co" in text and "same customer record" in text

@@ -255,6 +255,9 @@ def cmd_apply(args) -> int:
     if sims.get("suite", {}).get("id"):
         print(f"  simulation suite → {sims['suite']['id']} ({len(sims.get('simulations', {}))} simulations)")
     print("Verified every resource by reading it back. Next: `test` (chat scenarios) and `simulate --yes` (Vapi simulation suite), then `render`.")
+    if workspace.project.get("demo"):
+        print()
+        print(demos.handover(demos.get(workspace.project["demo"])))
     return 0
 
 

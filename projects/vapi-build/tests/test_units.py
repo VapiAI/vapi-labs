@@ -234,3 +234,15 @@ def test_skill_packaging_for_codex_and_upstream():
     for key in ("display_name", "short_description", "default_prompt"):
         assert f"  {key}: " in yaml_text
     assert "$vapi-build" in yaml_text
+
+
+def test_client_backs_off_and_retries_on_rate_limit():
+    from vapi_build import vapi
+
+    answers = iter([(429, b"slow down"), (429, b"slow down"), (200, b'{"id": "ok"}')])
+    calls = []
+    client = vapi.VapiClient("sk", transport=lambda m, u, h, d: (calls.append(u), next(answers))[1])
+    waits = []
+    client.sleep = waits.append
+    assert client.request("DELETE", "/file/x") == {"id": "ok"}
+    assert len(calls) == 3 and waits == [2.0, 4.0]

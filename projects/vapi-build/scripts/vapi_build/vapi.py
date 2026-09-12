@@ -20,6 +20,8 @@ from .workspace import USER_AGENT, BuildError, Workspace, read_json, utc_now, wr
 
 Transport = Callable[[str, str, dict[str, str], bytes | None], tuple[int, bytes]]
 KEY_VARIABLES = ("VAPI_API_KEY", "VAPI_PRIVATE_KEY")
+RATE_LIMIT_RETRIES = 5
+RATE_LIMIT_BACKOFF_SECONDS = 2.0
 # Vapi's accepted upload types; Python's mimetypes does not know some of these extensions (yaml, log, tsv).
 UPLOAD_TYPES = {"md": "text/markdown", "markdown": "text/markdown", "txt": "text/plain", "yaml": "application/x-yaml", "yml": "application/x-yaml",
                 "json": "application/json", "csv": "text/csv", "tsv": "text/tab-separated-values", "log": "text/x-log", "html": "text/html", "htm": "text/html",
@@ -45,6 +47,7 @@ class VapiClient:
         self._key = api_key
         self.base_url = base_url.rstrip("/")
         self.transport = transport
+        self.sleep: Callable[[float], None] = time.sleep
         self.calls: list[tuple[str, str]] = []
 
     def request(self, method: str, path: str, body: Any = None, *, allow_404: bool = False) -> Any:
@@ -54,6 +57,12 @@ class VapiClient:
             data = json.dumps(body).encode("utf-8")
             headers["Content-Type"] = "application/json"
         status, raw = self.transport(method, self.base_url + path, headers, data)
+        for attempt in range(RATE_LIMIT_RETRIES):
+            if status != 429:
+                break
+            # Vapi rate-limits bursts (teardown deletes dozens of files); wait and retry with growing pauses.
+            self.sleep(RATE_LIMIT_BACKOFF_SECONDS * (2 ** attempt))
+            status, raw = self.transport(method, self.base_url + path, headers, data)
         self.calls.append((method, path))
         return self._decode(method, path, status, raw, allow_404)
 

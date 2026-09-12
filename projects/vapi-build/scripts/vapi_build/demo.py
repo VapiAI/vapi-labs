@@ -90,6 +90,22 @@ def register(workspace: Workspace, demo_id: str) -> list[dict[str, Any]]:
     return [sources.add_source(workspace, s["role"], s["location"], **s["options"]) for s in demo["sources"]]
 
 
+def handover(demo: dict[str, Any]) -> str:
+    """What to give the user once a demo agent is live: one customer to call as, and the web login for the same customer,
+    so a transfer made by voice can be seen on the web site a moment later."""
+    c = demo["auth"]["customers"][0]
+    phone = c["phone"]
+    spoken = f"{phone[2:5]}-{phone[5:8]}-{phone[8:]}" if phone.startswith("+1") and len(phone) == 12 else phone
+    return "\n".join([
+        f"# Try it as {c['name']} (synthetic demo customer)",
+        "",
+        f"- **On the phone or in the Vapi dashboard:** say your number is {spoken} and your PIN is {c['pin']}. Ask for a balance, recent transactions, or to move money between checking and savings.",
+        f"- **On the web:** {demo['auth']['web'].split(' ')[0]} — sign in with {c['email']} / {c['password']}. It is the same customer record, so a transfer made by voice appears in the web account activity right away.",
+        "- Other demo customers, the MCP server, and the API details are in `demo show " + demo["id"] + "`.",
+        "- Everything here is synthetic and published on purpose.",
+    ]) + "\n"
+
+
 def card(demo: dict[str, Any]) -> str:
     """What the agent tells the user about a demo: sources, how auth works, and the published synthetic credentials."""
     lines = [f"# Demo: {demo['name']} ({demo['id']})", "", demo["summary"], "", "Everything here is synthetic and published on purpose; nothing is a real person, account, or secret.", "",
