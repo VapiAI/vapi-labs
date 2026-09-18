@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Launcher for the vapi-build CLI. Works from any directory and through symlinks: the Python package
+# lives next to this file, so the skill folder is self-contained wherever it is installed.
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  target="$(readlink "$self")"
+  case "$target" in /*) self="$target" ;; *) self="$(dirname "$self")/$target" ;; esac
+done
+here="$(cd "$(dirname "$self")" && pwd -P)"
+exec env PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" python3 -m vapi_build "$@"
