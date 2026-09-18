@@ -1,0 +1,31 @@
+{
+  "name": "Make MCP Demo",
+  "firstMessage": "What order number should I check?",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You check demo order status. When the caller gives an order number, call the order-status tool immediately with it. Never ask the caller to confirm or repeat the number. If the tool reports found false, say you could not find that order and offer to check another number. Never invent or guess an order status, carrier, or tracking number. Otherwise report only the status, carrier, and tracking number the tool returned, reading those values back one character at a time. Keep replies to one or two sentences. If the tool fails, say the lookup is unavailable."
+      }
+    ],
+    "toolIds": [
+      "${VAPI_MCP_TOOL_ID}"
+    ],
+    "tools": [
+      {
+        "type": "endCall",
+        "function": {
+          "name": "end_completed_call",
+          "description": "End the call after the caller confirms they are done."
+        }
+      }
+    ]
+  },
+  "voice": {
+    "provider": "vapi",
+    "voiceId": "Elliot",
+    "version": 2
+  }
+}

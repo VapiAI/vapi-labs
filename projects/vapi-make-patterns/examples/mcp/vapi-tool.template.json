@@ -1,0 +1,10 @@
+{
+  "type": "mcp",
+  "server": {
+    "url": "${MAKE_MCP_URL}",
+    "timeoutSeconds": 30
+  },
+  "metadata": {
+    "protocol": "shttp"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "input": [
+    {
+      "name": "orderNumber",
+      "type": "text",
+      "label": "Order number",
+      "required": true
+    }
+  ],
+  "output": [
+    {"name": "found", "type": "boolean", "label": "Found", "required": true},
+    {"name": "orderNumber", "type": "text", "label": "Order number", "required": true},
+    {"name": "status", "type": "text", "label": "Status", "required": false},
+    {"name": "carrier", "type": "text", "label": "Carrier", "required": false},
+    {"name": "trackingNumber", "type": "text", "label": "Tracking number", "required": false}
+  ]
+}
