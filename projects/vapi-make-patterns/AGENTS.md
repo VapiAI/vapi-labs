@@ -38,9 +38,9 @@ python3 scripts/setup.py api-request --check-webhook   # Make only
 python3 scripts/setup.py api-request                   # full round trip
 ```
 
-The mcp example cannot. It stops after the first command until a person publishes the scenario
-in a Make MCP toolbox and puts that toolbox URL in `.env` as `MAKE_MCP_URL`. Ask the operator to
-do that step; there is no API for it:
+The mcp example cannot. It stops after the first command until the operator uses the printed
+scenario ID in Make's documented scenario-level MCP-token URL and puts that Streamable HTTP URL
+in `.env` as `MAKE_MCP_URL`. The URL is a credential:
 
 ```bash
 python3 scripts/setup.py mcp --provision-scenario   # creates the scenario, then stop and ask
@@ -54,13 +54,11 @@ The setup script creates Vapi tools and assistants, and creates both examples' M
 
 - An API Request Tool uses any 2xx JSON response as the tool result directly. Make returns the
   record and nothing else. A non-2xx response or invalid JSON fails the call.
-- Do not add a Function Tool example. It needs Make to rebuild Vapi's `tool-calls` envelope, which
-  only earns its cost when a scenario needs Vapi call context, and documenting how to assemble that
-  envelope inside Make is Make instruction this repository does not carry. Link to the Vapi docs.
 - MCP correlation is handled by the protocol; do not add a Vapi callback envelope.
-- Vapi imports every tool an MCP server exposes and cannot filter them, so `MAKE_MCP_URL` must
-  point at a curated MCP toolbox. A URL scenario parameter does not reduce a token's tool list,
-  and a broad management token is large enough to time the chat out. Check with `--list-tools`.
+- Vapi imports every tool an MCP server exposes. Restrict scenario tools with Make's documented
+  `scenarioId` URL parameter and use least-privilege token scopes. The URL parameter does not apply
+  to management tools, so scenario filtering and token scopes address different surfaces. Check
+  the exposed surface with `--list-tools`.
 - Keep secrets out of model-visible tool parameters and response strings.
 
 ## Updating the examples
