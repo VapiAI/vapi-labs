@@ -19,4 +19,4 @@ The scenario answers `ORD-1001` with the record in [../order.json](../order.json
 
 Vapi builds the request body from the tool's `body` schema in [assistant.template.json](assistant.template.json) and posts [request.json](request.json)-shaped JSON. Any 2xx response containing valid JSON becomes the tool result; a non-2xx response or invalid JSON fails the call.
 
-Reference: [When to use API Request or Function tools](https://docs.vapi.ai/tools/api-request-vs-function) and [API Request tool](https://docs.vapi.ai/tools/api-request).
+Reference: [API Request tool](https://docs.vapi.ai/tools/api-request).

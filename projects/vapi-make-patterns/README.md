@@ -11,9 +11,7 @@ This repository is a companion to the Vapi documentation. Running an example cre
 | [API Request Tool → Make webhook](examples/api-request/README.md) | A direct HTTPS request built from the tool's `body` schema | Plain JSON, used as the tool result |
 | [Vapi MCP Tool → Make MCP Server](examples/mcp/README.md) | An MCP call over Streamable HTTP | An MCP result, correlated by the protocol |
 
-Start with the API Request tool. Vapi recommends it for any ordinary HTTPS endpoint, and Make only has to return the JSON you want the assistant to read. Use MCP when Make should own the tool surface, pointing Vapi at a curated Make toolbox rather than a broad token.
-
-If a Make scenario needs Vapi's call context, such as the call id or the transcript artifact, it needs a [Function tool](https://docs.vapi.ai/tools/custom-tools) instead, and Make has to rebuild Vapi's `tool-calls` response envelope.
+Start with the API Request tool. Vapi recommends it for any ordinary HTTPS endpoint, and Make only has to return the JSON you want the assistant to read. Use MCP when Make should own the tool surface, combining scenario-level access control with least-privilege token scopes.
 
 ## Run
 
@@ -21,8 +19,8 @@ Requires Python 3.9+ and no third-party packages.
 
 Both examples build their own Make scenario, so both need a Make API token that can read and write
 scenarios and hooks, plus a free slot under your plan's active-scenario limit. The mcp example
-additionally needs an MCP toolbox that you create in Make, because Make exposes no API for
-toolboxes.
+additionally needs a Make MCP token with the `mcp:use` scope. Give that token only the scopes this
+demo needs.
 
 1. Copy `.env.example` to `.env` and fill in the keys it names.
 2. Run it:
@@ -31,21 +29,31 @@ toolboxes.
    python3 scripts/setup.py api-request
    ```
 
-   The mcp example needs its scenario published in a Make toolbox first, which is the one
-   step Make exposes no API for:
+   For the mcp example, create the MCP token first, then provision the scenario:
 
    ```bash
    python3 scripts/setup.py mcp --provision-scenario   # creates the scenario
-   # publish it in an MCP toolbox, then set MAKE_MCP_URL
+   # use the printed scenario ID to set MAKE_MCP_URL as described below
    python3 scripts/setup.py mcp
    ```
+
+   Add the printed scenario ID to Make's documented MCP-token Streamable HTTP URL:
+
+   ```text
+   https://<MAKE_ZONE>/mcp/u/<MCP_TOKEN>?scenarioId=<SCENARIO_ID>
+   ```
+
+   Store that URL as `MAKE_MCP_URL` in `.env` and treat it as a credential. The `scenarioId`
+   parameter limits scenario tools, while the token's scopes separately control any management
+   tools. See [Connect using an MCP token](https://developers.make.com/mcp-server/connect-using-mcp-token)
+   and [Scenarios as tools access control](https://developers.make.com/mcp-server/connect-using-mcp-token/scenarios-as-tools-access-control).
 
 Each run creates new Vapi resources, prints the tool call and tool result it correlated, and prints `PASS` only after the expected record comes back.
 Make scenarios created by this checkout are recorded in the gitignored `.vapi-make-state.json`; only those recorded scenarios are updated on later runs.
 
 Two commands create no Vapi resources. The first sends the sample request to Make and checks the
 reply, building the Make scenario first if it does not exist yet. The second reports what an MCP
-URL would expose, since Vapi imports all of it and cannot filter:
+URL exposes, since Vapi imports every exposed MCP tool:
 
 ```bash
 python3 scripts/setup.py api-request --check-webhook
@@ -66,7 +74,7 @@ Never commit `.env`.
 - The examples use a fixed demo order rather than a real order system.
 - The API Request example's generated webhook is suitable for a demo, but a production endpoint should authenticate requests.
 - Make must have an available active-scenario slot, and the API token must be able to manage scenarios and hooks.
-- Make does not expose toolbox publishing through its API, so the MCP example requires one manual publishing step.
+- The MCP example requires an MCP token URL restricted with the provisioned scenario's ID.
 - Full runs create Vapi assistants and, for the MCP example, a Vapi tool. The scripts do not delete those resources.
 
 ## Built by

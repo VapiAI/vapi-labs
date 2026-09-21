@@ -261,7 +261,7 @@ def remember_scenario(pattern: str, team: int, scenario_id: int, path: Path = ST
 
 
 def provision_scenario(values: dict[str, str]) -> int:
-    """Create and activate the on-demand scenario the MCP toolbox will publish."""
+    """Create and activate the on-demand scenario exposed through Make MCP."""
     api = make_api(values)
     team = team_id(values)
     name = "vapi_demo_mcp_order_status"
@@ -389,13 +389,13 @@ def list_mcp_tools(url: str) -> None:
     rpc("initialize", {"protocolVersion": "2025-03-26", "capabilities": {},
                        "clientInfo": {"name": "vapi-make-examples", "version": "1.0"}}, 1)
     tools = rpc("tools/list", {}, 2)["tools"]
-    size = len(json.dumps(tools))
+    print("Tools exposed by MAKE_MCP_URL:")
     for tool in tools:
         print(f"  {tool['name']}")
-    print(f"{len(tools)} tool(s), {size:,} bytes of definitions (~{size // 4:,} tokens per turn)")
-    if len(tools) > 10:
-        print("WARNING: Vapi cannot filter these. Point MAKE_MCP_URL at a toolbox holding only the")
-        print("         scenarios this assistant needs, or the chat may time out.")
+    if not tools:
+        print("  (none)")
+    print("Vapi imports every exposed tool. Use scenario-level access control and least-privilege")
+    print("token scopes to reduce model context, latency, and timeout risk.")
 
 
 def verify(chat: dict[str, Any]) -> None:
@@ -432,7 +432,7 @@ def main() -> int:
     mode.add_argument(
         "--provision-scenario",
         action="store_true",
-        help="mcp only: create the on-demand Make scenario to publish in a toolbox, and stop",
+        help="mcp only: create the on-demand Make scenario, print its access-control ID, and stop",
     )
     mode.add_argument(
         "--list-tools",
@@ -452,8 +452,10 @@ def main() -> int:
         if args.pattern != "mcp":
             parser.error("--provision-scenario applies to the mcp pattern")
         scenario_id = provision_scenario(values)
-        print(f"\nPublish scenario {scenario_id} in a Make MCP toolbox, then put the toolbox's")
-        print("Streamable HTTP connection URL in .env as MAKE_MCP_URL.")
+        print("\nCreate a Make MCP token with the mcp:use scope and no additional scopes unless needed.")
+        print("Use Make's documented scenario-level Streamable HTTP URL:")
+        print(f"https://<MAKE_ZONE>/mcp/u/<MCP_TOKEN>?scenarioId={scenario_id}")
+        print("Store it in .env as MAKE_MCP_URL and treat it as a credential.")
         return 0
 
     if args.list_tools:
