@@ -1,0 +1,81 @@
+{
+  "name": "Vapi API Request - Business Hours",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "vapi-business-hours",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "41b560b9-39cb-4bd2-b7cb-8e39d2a6fcd1",
+      "name": "Receive Vapi request",
+      "webhookId": "abfd93d1-356e-4f47-9d02-675e8168bf24"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const timeZone = 'America/Los_Angeles';\nconst openDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];\nconst opensAt = '09:00';\nconst closesAt = '17:00';\n\nconst now = new Date();\nconst clock = Object.fromEntries(\n  new Intl.DateTimeFormat('en-GB', {\n    timeZone,\n    weekday: 'short',\n    hour: '2-digit',\n    minute: '2-digit',\n    hourCycle: 'h23',\n  }).formatToParts(now)\n    .filter(({ type }) => ['weekday', 'hour', 'minute'].includes(type))\n    .map(({ type, value }) => [type, value]),\n);\nconst localTime = `${clock.hour}:${clock.minute}`;\nconst openNow = openDays.includes(clock.weekday)\n  && localTime >= opensAt\n  && localTime < closesAt;\n\nreturn [{\n  json: {\n    openNow,\n    localTime,\n    timeZone,\n    openDays,\n    opensAt,\n    closesAt,\n    checkedAt: now.toISOString(),\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "e592d8ee-6951-46f1-aefb-72f871c46941",
+      "name": "Check business hours"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        0
+      ],
+      "id": "66410231-a84b-4389-bcc5-7e4f25f26eef",
+      "name": "Return JSON to Vapi"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Vapi request": {
+      "main": [
+        [
+          {
+            "node": "Check business hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check business hours": {
+      "main": [
+        [
+          {
+            "node": "Return JSON to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

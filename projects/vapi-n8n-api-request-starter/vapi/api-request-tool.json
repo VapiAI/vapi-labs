@@ -1,0 +1,8 @@
+{
+  "type": "apiRequest",
+  "name": "checkBusinessHours",
+  "description": "Check whether the example business is open now. Use the returned local time, time zone, and schedule when answering. Do not imply that appointments are available.",
+  "method": "GET",
+  "url": "YOUR_N8N_PRODUCTION_WEBHOOK_URL",
+  "timeoutSeconds": 10
+}
