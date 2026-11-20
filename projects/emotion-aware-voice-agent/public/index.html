@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emotion-Aware Voice Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #111113; --panel: #14171c; --panel2: #1b1f26; --line: #2a2f38; --card: #1a1a1e; --mint: #1ed38c;
+    --text: #f4f5f7; --muted: #9aa1ac; --dim: #4f5560;
+    --angry: #e5484d; --frustrated: #f76b15; --sad: #3e63dd; --fearful: #8e4ec6;
+    --happy: #30a46c; --neutral: #8b8d98;
+    --calm: #12a594; --warm: #ffb224; --upbeat: #30a46c; --gentle: #6e6ade; --curt: #e5484d; --flat: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 22px/1.4 "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .shell { max-width: 1840px; height: 100vh; min-height: 640px; margin: 0 auto; padding: 24px 32px; display: flex; flex-direction: column; gap: 26px; }
+  .view { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 26px; }
+  .view.active { display: flex; }
+  #view-arch.active { flex: 1; min-height: 600px; }
+  .tabs { display: flex; gap: 4px; margin-left: 24px; }
+  .tab { color: var(--dim); padding: 8px 16px; font-size: 22px; font-weight: 700; }
+  .tab.active { color: var(--text); }
+  .talk-btn { background: var(--mint); color: #0b0d10; font-size: 22px; font-weight: 800; padding: 14px 30px; border-radius: 99px; }
+  .talk-btn.live { background: var(--angry); color: #fff; }
+  .talk-btn:disabled { opacity: .7; cursor: wait; }
+
+  .arch { flex: 1; min-height: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 24px 14px; display: flex; flex-direction: column; }
+  .arch svg { flex: 1 1 0; min-height: 0; width: 100%; }
+  .arch .takeaway { text-align: center; font-size: 26px; font-weight: 700; padding-top: 8px; }
+  .arch .takeaway em { font-style: normal; color: var(--calm); }
+  .arch text { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; fill: var(--text); }
+  .arch .node rect { fill: var(--panel2); stroke: var(--line); stroke-width: 2; }
+  .arch .node.vapi rect { stroke: #eef0f3; }
+  .arch .node.server rect { stroke: var(--calm); stroke-width: 4; fill: #12a5941a; }
+  .arch .node.gpt rect { stroke: var(--dim); }
+  .arch .node.el rect { stroke: var(--warm); }
+  .arch .node.hume rect { stroke: var(--fearful); stroke-width: 3; fill: #8e4ec61a; }
+  .arch .node.esc rect { stroke: var(--frustrated); fill: #f76b1514; }
+  .arch .t { font-size: 30px; font-weight: 750; text-anchor: middle; }
+  .arch .s { font-size: 19px; fill: var(--muted); text-anchor: middle; }
+  .arch .e { font-size: 40px; text-anchor: middle; }
+  .arch .lbl { font-size: 18px; fill: var(--muted); }
+  .arch .wire { stroke: var(--dim); stroke-width: 3; fill: none; }
+  .arch .flow { stroke-dasharray: 10 8; animation: flow 1.2s linear infinite; stroke: #c3c8d0; stroke-width: 4; }
+  .arch .wire.hume { stroke: var(--fearful); }
+  .arch .wire.esc { stroke: var(--frustrated); stroke-dasharray: 6 6; }
+  .arch .chip-bg { fill: #ffb2241f; stroke: var(--warm); stroke-width: 2; }
+  .arch .mono { font: 600 21px ui-monospace, Menlo, monospace; fill: var(--warm); text-anchor: middle; }
+  .arch .pal-row { font-size: 23px; }
+  .arch .pal-row.on { font-weight: 800; }
+  .arch .pal-title { font-size: 17px; letter-spacing: 2.5px; fill: var(--muted); font-weight: 650; }
+  .arch .esc-lane { font-size: 22px; font-weight: 750; fill: var(--frustrated); }
+  @keyframes flow { to { stroke-dashoffset: -36; } }
+  .arch .node.esc.lit rect { fill: #f76b1540; stroke-width: 4; }
+  .arch .node.esc.ok rect { stroke: var(--happy); fill: #30a46c33; stroke-width: 4; }
+  .arch .node.esc.sim rect { stroke: var(--sad); fill: #3e63dd33; stroke-width: 4; }
+  /* ---- Header: one line, no box ---- */
+  header { display: flex; align-items: center; gap: 20px; padding: 4px 8px 0; }
+  header h1 { font-size: 30px; margin: 0; font-weight: 800; letter-spacing: -.3px; }
+  header .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; color: var(--muted); }
+  .pill::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--dim); }
+  .pill.live { color: var(--mint); }
+  .pill.live::before { background: var(--mint); box-shadow: 0 0 0 0 #1ed38c88; animation: live 1.6s ease-out infinite; }
+  @keyframes live { to { box-shadow: 0 0 0 12px #1ed38c00; } }
+  button { background: transparent; color: var(--muted); border: none; border-radius: 99px; padding: 10px 18px; cursor: pointer; font: inherit; font-size: 22px; font-weight: 600; }
+  #reset:hover { color: var(--text); }
+
+  /* ---- Hero: the two mood cards ---- */
+  .hero { display: grid; grid-template-columns: 1fr 110px 1fr; gap: 0; height: clamp(300px, 38vh, 420px); flex: none; }
+  .mood { position: relative; border-radius: 32px; background: var(--card); padding: 30px 40px; overflow: hidden; display: flex; flex-direction: column; transition: background .5s, box-shadow .5s; }
+  .mood .who { font-size: 22px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); font-weight: 700; display: flex; gap: 16px; }
+  .mood .flag { color: var(--angry); }
+  .mood .main { display: flex; align-items: center; gap: 36px; flex: 1; min-height: 0; }
+  .mood .face { font-size: clamp(96px, 12vh, 140px); line-height: 1; }
+  .mood .label { font-size: clamp(54px, 6.6vh, 76px); font-weight: 800; letter-spacing: -1.5px; line-height: 1; transition: color .4s; }
+  .mood .history { display: flex; gap: 10px; align-items: center; height: 24px; }
+  .mood .history .dot { width: 22px; height: 22px; border-radius: 50%; }
+  .mood.idle .label { color: var(--dim); }
+  .mood.idle .face { opacity: .45; }
+
+  .bridge { display: flex; align-items: center; justify-content: center; }
+  .bridge .arrow { font-size: 56px; color: var(--dim); transition: color .4s; }
+  .bridge .arrow.on { color: var(--mint); }
+
+  /* ---- Escalation: pips + steps, no box ---- */
+  .escbar { display: flex; align-items: center; gap: 28px; padding: 0 12px; flex: none; }
+  .pips { display: flex; gap: 14px; }
+  .pips i { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--dim); transition: background .3s, border-color .3s; }
+  .pips i.on { background: var(--frustrated); border-color: var(--frustrated); }
+  .escbar.due .pips i.on { background: var(--angry); border-color: var(--angry); }
+  .esc-count { font-size: 30px; font-weight: 800; min-width: 220px; }
+  .escbar.done .esc-count { color: var(--mint); }
+  .escbar.done .pips i.on { background: var(--mint); border-color: var(--mint); }
+  .escbar.fail .pips i.on { background: var(--angry); border-color: var(--angry); }
+  .escbar.fail .esc-count { color: var(--angry); }
+  .steps { display: flex; align-items: center; gap: 14px; margin-left: auto; color: var(--dim); font-size: 26px; }
+  .step { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; padding: 12px 24px 12px 18px; border-radius: 99px; border: 3px solid transparent; color: var(--dim); background: var(--card); transition: all .3s; }
+  .step span { font-size: 34px; line-height: 1; filter: grayscale(1) opacity(.5); transition: filter .3s; }
+  .step.active { color: var(--text); border-color: var(--mint); animation: pulse 1.1s ease-in-out infinite; }
+  .step.done { color: var(--text); background: #1ed38c22; }
+  .step.fail { color: var(--text); border-color: var(--angry); background: #e5484d22; }
+  .step.active span, .step.done span, .step.fail span { filter: none; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 8px #1ed38c2e; } }
+
+  /* ---- Transfer packet: who + briefing ---- */
+  .packet { display: none; border-radius: 32px; background: var(--card); padding: 26px 40px; flex: none; position: relative; }
+  .packet::before { content: ""; position: absolute; left: 0; top: 24px; bottom: 24px; width: 6px; border-radius: 0 6px 6px 0; background: var(--mint); }
+  .packet.show { display: grid; grid-template-columns: minmax(300px, auto) 1fr; gap: 16px 56px; align-items: center; animation: pop .35s ease-out; }
+  @keyframes pop { from { transform: scale(.98); opacity: 0; } }
+  .pk-to { font-size: 34px; font-weight: 800; white-space: nowrap; }
+  .pk-to::before { content: "📞 "; }
+  .pk-trail { font-size: 42px; display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .pk-trail i { font-style: normal; font-size: 26px; color: var(--dim); }
+  .pk-brief { font-size: clamp(28px, 3.1vh, 34px); font-weight: 600; line-height: 1.3; }
+  .pk-end { font-size: 24px; font-weight: 700; color: var(--mint); margin-top: 8px; }
+  .pk-end:empty { display: none; }
+  /* Once the packet is up, the cards step down so the conversation keeps its room. */
+  #view-demo:has(.packet.show) .hero { height: clamp(260px, 30vh, 320px); }
+  #view-demo:has(.packet.show) .mood { padding: 24px 40px; }
+  #view-demo:has(.packet.show) .mood .face { font-size: 96px; }
+  #view-demo:has(.packet.show) .mood .label { font-size: 60px; }
+
+  /* ---- Lower: transcript + guardrail, aligned under the cards ---- */
+  .lower { display: grid; grid-template-columns: 1fr 110px 1fr; flex: 1; min-height: 200px; }
+  .lower > .panel:first-child { grid-column: 1; }
+  .lower > .panel:last-child { grid-column: 3; }
+  .panel { display: flex; flex-direction: column; min-height: 0; padding: 0 12px; }
+  .panel h2 { font-size: 22px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; font-weight: 700; }
+  /* Newest lines stay pinned to the bottom; older ones fade off the top (no scrollbar). */
+  .scroll { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 70px); mask-image: linear-gradient(to bottom, transparent 0, #000 70px); }
+  .msg { font-size: 25px; line-height: 1.35; max-width: 88%; flex: none; }
+  .msg .tag { display: block; font: 600 22px ui-monospace, Menlo, monospace; margin-bottom: 4px; }
+  .msg.user { align-self: flex-start; color: var(--text); padding-left: 20px; border-left: 5px solid var(--dim); }
+  .msg.agent { align-self: flex-end; color: #c9ccd2; padding-right: 20px; border-right: 5px solid var(--dim); }
+  .rule-row { flex: none; display: flex; align-items: center; gap: 18px; font-size: 26px; font-weight: 700; padding: 10px 22px; border-radius: 20px; background: var(--card); }
+  .rule-row .faces { font-size: 36px; display: flex; align-items: center; gap: 12px; }
+  .rule-row .faces i { font-style: normal; font-size: 26px; color: var(--dim); }
+  .rule-row.blocked { color: var(--angry); background: #e5484d1c; }
+  /* What Hume returned for the latest turn, under each card. */
+  .mood .scores { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; font-size: 24px; font-weight: 600; color: var(--muted); margin: 6px 0 12px; min-height: 34px; font-variant-numeric: tabular-nums; }
+  .mood .scores .sc { display: inline-flex; align-items: baseline; gap: 6px; }
+  .mood .scores .sc.top { color: var(--text); font-weight: 800; }
+  .mood .scores .sc.low { opacity: .45; }
+  .mood .scores .meta { color: var(--dim); font-weight: 500; font-size: 22px; }
+  .mood .scores .meta b { color: var(--text); }
+  /* ---- Slides ---- */
+  #view-slides.active { flex: 1; min-height: 0; }
+  .deck { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+  .slide { display: none; flex-direction: column; aspect-ratio: 16 / 9; width: min(100%, calc((100vh - 150px) * 16 / 9)); container-type: inline-size; border-radius: 16px; padding: 5.5cqw 7cqw; overflow: hidden; font-family: "Plus Jakarta Sans", -apple-system, sans-serif; }
+  .slide.on { display: flex; }
+  .slide.dark { background: #111113; color: #f4f5f7; border: 1px solid #2a2f38; }
+  .slide.light { background: #fafafa; color: #111113; border: 1px solid #2a2f38; }
+  .slide .grow { flex: 1; min-height: 0; }
+  .slide .center-v { display: flex; flex-direction: column; justify-content: center; }
+  .slide .eyebrow { font-size: 1.3cqw; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #6b7079; }
+  .slide.dark .eyebrow { color: #9aa1ac; }
+  .slide .mint { color: var(--mint) !important; }
+  .slide .red { color: var(--angry) !important; }
+  .slide .orange { color: var(--frustrated) !important; }
+  .slide h2 { font-size: 4.6cqw; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; margin: 1.2cqw 0 0; }
+  .slide .title { font-size: 8.4cqw; line-height: 1; font-weight: 700; letter-spacing: -.03em; margin-top: 1.6cqw; }
+  .slide .subtitle { font-size: 3.4cqw; color: #9aa1ac; margin-top: 1.6cqw; }
+  .slide .statement { font-size: 4.2cqw; line-height: 1.15; margin: 1.4cqw 0 3cqw; max-width: 80%; }
+  .slide .lede { font-size: 2cqw; color: #555b66; }
+  .slide .row-top { display: flex; justify-content: space-between; align-items: center; }
+  .slide .logo { display: flex; align-items: center; gap: .6cqw; font-size: 4.4cqw; font-weight: 700; letter-spacing: -.03em; }
+  .slide .logo svg { width: 6cqw; height: 6cqw; }
+  .slide .logo svg path { fill: var(--mint); }
+  .slide .wave { display: flex; align-items: center; gap: .55cqw; height: 6cqw; }
+  .slide .wave i { display: block; width: .38cqw; border-radius: 1cqw; background: var(--mint); }
+  .slide .wave.big { height: 8cqw; margin-top: 3cqw; }
+  /* both ways */
+  .slide .both { display: flex; align-items: center; justify-content: center; gap: 3cqw; }
+  .slide .party { width: 17cqw; padding: 2.4cqw 0; text-align: center; font-size: 3cqw; font-weight: 700; background: #1b1f26; border: 1px solid #2a2f38; border-radius: 1.6cqw; }
+  .slide .party .emoji { font-size: 5cqw; margin-bottom: .8cqw; }
+  .slide .arrows { display: flex; flex-direction: column; gap: 3.4cqw; width: 40cqw; }
+  .slide .arrow { position: relative; height: .35cqw; background: var(--mint); }
+  .slide .arrow span { position: absolute; left: 0; right: 0; bottom: 1.2cqw; text-align: center; font-size: 2.4cqw; font-weight: 700; white-space: nowrap; }
+  .slide .arrow.left { background: var(--warm); }
+  .slide .arrow.left span { bottom: auto; top: 1.2cqw; }
+  .slide .arrow::after { content: ""; position: absolute; top: 50%; transform: translateY(-50%); border: 1.1cqw solid transparent; }
+  .slide .arrow.right::after { right: -1.4cqw; border-left: 1.6cqw solid var(--mint); border-right: 0; }
+  .slide .arrow.left::after { left: -1.4cqw; border-right: 1.6cqw solid var(--warm); border-left: 0; }
+  /* quote */
+  .slide .quote { font-size: 4.2cqw; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; margin: 0; max-width: 90%; }
+  .slide .quote.q5 { font-size: 3.8cqw; }
+  .slide .q5 .mint { white-space: nowrap; }
+  .slide .cite { font-size: 2cqw; color: #6b7079; margin-top: 2.4cqw; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  /* stats */
+  .slide .stats { display: flex; align-items: flex-start; gap: 8cqw; padding-top: 6cqw; }
+  .slide .stat .num { font-size: 15cqw; font-weight: 800; line-height: 1; letter-spacing: -.04em; }
+  .slide .stat .cap { font-size: 2.4cqw; color: #c3c8d0; max-width: 32cqw; margin-top: 1cqw; }
+  /* tag line */
+  .slide .tagline { font-size: 3.6cqw; line-height: 1.6; font-weight: 600; }
+  .slide .tagline .tag { font-family: ui-monospace, Menlo, monospace; color: var(--warm); background: #ffb2241f; border: 2px solid var(--warm); border-radius: .8cqw; padding: .2cqw 1cqw; font-weight: 600; }
+  /* pipeline chips */
+  .slide .pipe { display: flex; align-items: center; gap: 1.2cqw; margin-top: 2.4cqw; font-size: 2.2cqw; font-weight: 700; }
+  .slide .pipe span { padding: .9cqw 2cqw; border-radius: 99px; background: #e4e5e8; }
+  .slide.dark .pipe span { background: #1b1f26; border: 1px solid #2a2f38; }
+  .slide .pipe i { font-style: normal; color: #9aa1ac; }
+  .slide .pipe .lost { background: var(--angry); color: #fff; }
+  .slide .pipe.s2s { font-size: 3cqw; margin: 0 0 4cqw; }
+  .slide .pipe.s2s .one { background: var(--mint); color: #0b0d10; border: 0; }
+  .slide .pipe.dim { opacity: .35; margin: 0 0 4cqw; }
+  .slide .checks { display: flex; flex-direction: column; gap: 1.8cqw; font-size: 3.2cqw; font-weight: 700; }
+  .slide .checks b { display: inline-block; width: 4.4cqw; }
+  /* transcript cards */
+  .slide .cards { display: flex; align-items: flex-start; gap: 2.6cqw; margin-top: 4cqw; }
+  .slide .card { flex: 1; border-radius: 1.6cqw; padding: 2.8cqw; display: flex; flex-direction: column; gap: 1.6cqw; }
+  .slide .card.ok { background: var(--mint); color: #0b0d10; }
+  .slide .card.bad { background: var(--angry); color: #fff; }
+  .slide .card .eyebrow { color: inherit; opacity: .75; }
+  .slide .card .said { font-size: 2.8cqw; font-style: italic; }
+  .slide .card .means { font-size: 2.8cqw; font-weight: 800; border-top: 2px solid currentColor; padding-top: 1.6cqw; }
+  /* tiles */
+  .slide .tiles { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 11cqw; align-content: center; gap: 2.2cqw; }
+  .slide .tile { white-space: nowrap; background: #e9eaec; border-radius: 1.6cqw; display: flex; align-items: center; gap: 2cqw; padding: 0 3cqw; font-size: 3.2cqw; font-weight: 700; }
+  .slide .tile .emoji { font-size: 4.2cqw; }
+  /* architecture inside a slide */
+  .slide .slide-arch { background: none; border: 0; padding: 2cqw 0 0; }
+  /* escalation */
+  .slide .esc-path { display: flex; align-items: center; gap: 2cqw; }
+  .slide .esc-path i { font-style: normal; font-size: 4cqw; color: var(--frustrated); }
+  .slide .esc-path .estep { flex: 1; text-align: center; font-size: 5cqw; padding: 2.4cqw 0; border-radius: 1.6cqw; background: #f76b1522; border: 3px solid var(--frustrated); }
+  .slide .esc-path .estep span { display: block; font-size: 2.8cqw; font-weight: 800; margin-top: .6cqw; }
+  .slide .esc-path .estep small { display: block; font-size: 2cqw; color: #c3c8d0; }
+  .slide .esc-path .estep.person { background: #30a46c2a; border-color: var(--happy); }
+  /* brand rules */
+  .slide .rules-split { display: flex; gap: 5cqw; align-items: center; margin-top: 2cqw; }
+  .slide .rules { display: flex; flex-direction: column; gap: 1.4cqw; }
+  .slide .rule { display: flex; align-items: center; gap: 1.6cqw; font-size: 2.6cqw; font-weight: 600; }
+  .slide .rule span { width: 17cqw; text-align: center; padding: 1cqw 0; border-radius: 99px; }
+  .slide .rule .in { background: #e4e5e8; }
+  .slide .rule .out { background: var(--mint); color: #0b0d10; }
+  .slide .rule .black { background: #111113; color: #fff; }
+  .slide .rule i { font-style: normal; color: #6b7079; }
+  .slide .calls { flex: 1; display: flex; flex-direction: column; gap: 2cqw; }
+  .slide .call { border-radius: 1.6cqw; padding: 2.2cqw 2.6cqw; font-size: 3cqw; font-weight: 800; }
+  .slide .call .eyebrow { color: inherit; opacity: .8; margin-bottom: .6cqw; }
+  .slide .call.ok { background: var(--mint); color: #0b0d10; }
+  .slide .call.bad { background: var(--angry); color: #fff; }
+  .slide { position: relative; }
+  .slide .slide-no { position: absolute; top: 1.6cqw; left: 2cqw; font-size: 1cqw; font-weight: 600; color: #8b8f98; }
+  .slide .party .emoji { height: 7cqw; display: flex; align-items: center; justify-content: center; }
+  .slide .party .emoji svg.bot { width: 6.4cqw; height: 6.4cqw; }
+  /* the two demo calls */
+  .slide .paths { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw; margin-top: 2.4cqw; }
+  .slide .path { background: #fff; border: 1px solid #e4e5e8; border-top: .7cqw solid var(--mint); border-radius: 1.6cqw; padding: 2cqw 2.6cqw; display: flex; flex-direction: column; gap: 1cqw; }
+  .slide .path.bad { border-top-color: var(--angry); }
+  .slide .path .eyebrow { margin-bottom: .4cqw; }
+  .slide .path .said { font-size: 2.1cqw; font-style: italic; color: #2b2f36; line-height: 1.3; }
+  .slide .path .read { display: flex; align-items: center; gap: 1cqw; font-size: 2.1cqw; font-weight: 700; margin-bottom: .8cqw; }
+  .slide .path .read i { font-style: normal; color: #6b7079; }
+  .slide .path .tone { padding: .5cqw 1.6cqw; border-radius: 99px; background: var(--mint); color: #0b0d10; }
+  .slide .path .tone.person { background: #111113; color: #fff; }
+  .slide .path .dots { display: flex; gap: .6cqw; margin-left: auto; }
+  .slide .path .dots b { width: 1.4cqw; height: 1.4cqw; border-radius: 50%; border: 2px solid var(--frustrated); }
+  .slide .path .dots b.on { background: var(--frustrated); }
+  .slide .path .result { margin-top: auto; padding-top: 1.2cqw; border-top: 2px solid #e4e5e8; font-size: 2.4cqw; font-weight: 800; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Emotion-Aware Voice Agent</h1>
+    <nav class="tabs">
+      <button class="tab active" data-view="demo">Live demo</button>
+      <button class="tab" data-view="slides">Slides</button>
+    </nav>
+    <div class="spacer"></div>
+    <span class="pill" id="status">Ready</span>
+    <button class="talk-btn" id="talk-btn">🎙 Talk to the agent</button>
+    <button id="reset">Reset</button>
+  </header>
+
+  <div class="view active" id="view-demo" data-ui="declutter-v1">
+  <section class="hero">
+    <div class="mood idle" id="caller">
+      <div class="who">Caller</div>
+      <div class="main">
+        <div class="face" id="caller-face">🎧</div>
+        <div class="label" id="caller-label">Listening</div>
+      </div>
+      <div class="scores" id="caller-scores"></div>
+      <div class="history" id="caller-history"></div>
+    </div>
+
+    <div class="bridge"><div class="arrow" id="bridge-arrow">➜</div></div>
+
+    <div class="mood idle" id="agent">
+      <div class="who">Agent <span class="flag" id="agent-flag"></span></div>
+      <div class="main">
+        <div class="face" id="agent-face">🎙️</div>
+        <div class="label" id="agent-label">Ready</div>
+      </div>
+      <div class="scores" id="agent-scores"></div>
+      <div class="history" id="agent-history"></div>
+    </div>
+  </section>
+
+  <section class="escbar" id="escbar">
+    <div class="pips" id="pips"><i></i><i></i></div>
+    <div class="esc-count" id="esc-count"></div>
+    <div class="steps">
+      <div class="step" id="step-handoff"><span>🗣️</span>Handoff</div>➜
+      <div class="step" id="step-transfer"><span>📞</span>Dialing</div>➜
+      <div class="step" id="step-briefed"><span>👩‍💼</span>Briefed</div>➜
+      <div class="step" id="step-handed"><span>🤝</span>Handed off</div>
+    </div>
+  </section>
+
+  <section class="packet" id="packet">
+    <div>
+      <div class="pk-to" id="pk-to"></div>
+      <div class="pk-trail" id="pk-trail"></div>
+      <div class="pk-end" id="pk-end"></div>
+    </div>
+    <div class="pk-brief" id="pk-brief"></div>
+  </section>
+
+  <section class="lower">
+    <div class="panel">
+      <h2>Conversation</h2>
+      <div class="scroll" id="transcript"></div>
+    </div>
+    <div class="panel">
+      <h2>Guardrail</h2>
+      <div class="scroll" id="rules"></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="view" id="view-slides">
+    <div class="deck" id="deck">
+
+      <!-- 1. Title -->
+      <section class="slide dark">
+        <div class="row-top"><div class="logo"><svg viewBox="0 0 500 500" aria-hidden="true"><path d="M208.518 242.429C232.735 254.842 260.28 248.508 277.823 227.705C289.148 214.277 301.125 199.079 310.435 187.018C321.027 173.295 337.312 165.085 354.648 165.085C377.006 165.085 397.119 178.673 405.463 199.415L484.215 395.169C485.246 397.732 482.326 400.128 480.078 398.52C456.498 381.654 383.709 330.666 328.389 303.516C304.682 291.881 277.932 297.465 261.121 317.832C246.323 335.76 230.104 357.783 218.279 374.301C207.452 389.426 190.093 398.601 171.492 398.601C148.489 398.601 127.8 384.606 119.24 363.254L15.7848 105.198C14.69 102.467 18.0593 100.03 20.2367 102.009C48.4828 127.676 137.187 205.866 208.518 242.429Z"/></svg><span>vapi</span></div><div class="wave"></div></div>
+        <div class="grow center-v">
+          <div class="eyebrow mint">VapiCon 2026</div>
+          <div class="title">Beyond the Transcript</div>
+          <div class="subtitle">Emotion-aware voice agents</div>
+        </div>
+        <div class="eyebrow">Noah Raynor · Dhruva Reddy</div>
+      </section>
+
+      <!-- 3. Both ways -->
+      <section class="slide dark">
+        <div class="eyebrow mint">Two directions</div>
+        <h2>Emotion runs both ways</h2>
+        <div class="grow center-v">
+          <div class="both">
+            <div class="party"><div class="emoji">🗣️</div>Caller</div>
+            <div class="arrows">
+              <div class="arrow right"><span>Hear how they feel</span></div>
+              <div class="arrow left"><span>How your brand sounds</span></div>
+            </div>
+            <div class="party"><div class="emoji"><svg class="bot" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="botShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f9"/><stop offset="1" stop-color="#aeb5c0"/></linearGradient><filter id="botGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter></defs><rect x="26" y="50" width="12" height="7" rx="3" fill="#7d8591"/><rect x="11" y="8" width="42" height="44" rx="20" fill="url(#botShell)"/><rect x="16" y="22" width="32" height="14" rx="7" fill="#0b0d10"/><g fill="var(--mint)"><rect x="21" y="27" width="8" height="4" rx="2" filter="url(#botGlow)"/><rect x="35" y="27" width="8" height="4" rx="2" filter="url(#botGlow)"/><rect x="21" y="27" width="8" height="4" rx="2"/><rect x="35" y="27" width="8" height="4" rx="2"/></g></svg></div>Agent</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Emotion drives loyalty -->
+      <section class="slide light">
+        <div class="eyebrow">Why care</div>
+        <h2>Emotion drives loyalty</h2>
+        <div class="grow center-v">
+          <blockquote class="quote">“Positive emotions, felt as trust, were the biggest drivers of satisfaction and loyalty.”</blockquote>
+          <div class="cite">McKinsey</div>
+        </div>
+      </section>
+
+      <!-- 5. Connection beats satisfaction -->
+      <section class="slide dark">
+        <div class="eyebrow mint">Why care</div>
+        <h2>Connection beats satisfaction</h2>
+        <div class="grow center-v">
+          <blockquote class="quote q5">“Emotionally connected customers are <span class="mint">52% more valuable</span> than customers who are just highly satisfied.”</blockquote>
+          <div class="cite">Harvard Business Review</div>
+        </div>
+      </section>
+
+      <!-- 6. Voices can act -->
+      <section class="slide dark">
+        <div class="eyebrow mint">The agent’s voice</div>
+        <h2>Voices can emote now</h2>
+        <div class="grow center-v">
+          <div class="tagline"><span class="tag">[calm, reassuring]</span><br>I’m sorry about that. Crews are on it.</div>
+          <div class="wave big"></div>
+        </div>
+      </section>
+
+      <!-- 7. Transcript can't tell -->
+      <section class="slide light">
+        <div class="eyebrow">The caller’s voice</div>
+        <h2>A transcript can’t tell them apart</h2>
+        <div class="pipe"><span>Audio</span><i>→</i><span class="lost">Text</span><i>→</i><span>LLM</span><i>→</i><span>Reply</span></div>
+        <div class="grow cards">
+          <div class="card ok"><div class="eyebrow">Pleased caller</div><div class="said">“Six tonight. Great, that’s just great.”</div><div class="means">That works for me.</div></div>
+          <div class="card bad"><div class="eyebrow">Frustrated caller</div><div class="said">“Six tonight. Great, that’s just great.”</div><div class="means">I can’t believe this.</div></div>
+        </div>
+      </section>
+
+      <!-- 8. Speech-to-speech -->
+      <section class="slide dark">
+        <div class="eyebrow mint">One option</div>
+        <h2>Speech-to-speech hears the voice</h2>
+        <div class="grow center-v">
+          <div class="pipe s2s"><span>Audio in</span><i>→</i><span class="one">S2S Model</span><i>→</i><span>Audio out</span></div>
+          <div class="checks">
+            <div><b class="mint">✓</b> Sounds emotionally aware</div>
+            <div><b class="mint">✓</b> Natural, fast turn-taking</div>
+            <div><b class="orange">?</b> Right for every use case</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Rules in code -->
+      <section class="slide light">
+        <div class="eyebrow">Another option</div>
+        <h2>The voice pipeline approach</h2>
+        <div class="grow tiles">
+          <div class="tile"><div class="emoji">🎚️</div>Emotion is a value</div>
+          <div class="tile"><div class="emoji">📋</div>Tone is a lookup</div>
+          <div class="tile"><div class="emoji">🧾</div>Every turn is logged</div>
+          <div class="tile"><div class="emoji">🔁</div>Every part is swappable</div>
+        </div>
+      </section>
+
+      <!-- 10. Architecture -->
+      <section class="slide dark">
+        <div class="eyebrow mint">Architecture</div>
+        <h2>Vapi talks. Our server thinks.</h2>
+        <div class="grow arch slide-arch">
+      <svg viewBox="0 120 1360 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Architecture: caller, Vapi, LLM server with an audio decision model, voice, caller">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa1ac"/></marker>
+          <marker id="ahP" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8e4ec6"/></marker>
+          <marker id="ahO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f76b15"/></marker>
+        </defs>
+
+
+
+        <!-- main row -->
+        <g class="node"><rect x="20" y="140" width="180" height="160" rx="18"/>
+          <text class="e" x="110" y="196">🗣️</text><text class="t" x="110" y="244">Caller</text><text class="s" x="110" y="276">speaks</text></g>
+        <g class="node vapi"><rect x="250" y="140" width="220" height="160" rx="18"/>
+          <svg x="330" y="152" width="60" height="60" viewBox="0 0 500 500" aria-label="Vapi logo"><path d="M208.518 242.429C232.735 254.842 260.28 248.508 277.823 227.705C289.148 214.277 301.125 199.079 310.435 187.018C321.027 173.295 337.312 165.085 354.648 165.085C377.006 165.085 397.119 178.673 405.463 199.415L484.215 395.169C485.246 397.732 482.326 400.128 480.078 398.52C456.498 381.654 383.709 330.666 328.389 303.516C304.682 291.881 277.932 297.465 261.121 317.832C246.323 335.76 230.104 357.783 218.279 374.301C207.452 389.426 190.093 398.601 171.492 398.601C148.489 398.601 127.8 384.606 119.24 363.254L15.7848 105.198C14.69 102.467 18.0593 100.03 20.2367 102.009C48.4828 127.676 137.187 205.866 208.518 242.429Z" fill="#FEFEFE"/></svg><text class="t" x="360" y="244">Vapi</text><text class="s" x="360" y="276">hears the words</text></g>
+        <g class="node server"><rect x="520" y="140" width="320" height="160" rx="18"/>
+          <text class="e" x="680" y="196">🧠</text><text class="t" x="680" y="244">LLM</text><text class="s" x="680" y="276">our server · tags each reply</text></g>
+        <g class="node el"><rect x="890" y="140" width="220" height="160" rx="18"/>
+          <text class="e" x="1000" y="196">🔊</text><text class="t" x="1000" y="244">Voice</text><text class="s" x="1000" y="276">performs the tag</text></g>
+        <g class="node"><rect x="1160" y="140" width="180" height="160" rx="18"/>
+          <text class="e" x="1250" y="196">👂</text><text class="t" x="1250" y="244">Caller</text><text class="s" x="1250" y="276">hears it</text></g>
+        <path class="wire flow" d="M202 220 L246 220" marker-end="url(#ah)"/>
+        <path class="wire flow" d="M472 220 L516 220" marker-end="url(#ah)"/>
+        <path class="wire flow" d="M842 220 L886 220" marker-end="url(#ah)"/>
+        <path class="wire flow" d="M1112 220 L1156 220" marker-end="url(#ah)"/>
+
+        <!-- Hume branch -->
+        <path class="wire hume flow" style="stroke:#8e4ec6" d="M360 302 L360 470 L514 470" marker-end="url(#ahP)"/>
+        <text class="lbl" x="346" y="400" text-anchor="end">live audio</text>
+        <g class="node hume"><rect x="520" y="400" width="320" height="115" rx="18"/>
+          <text class="t" x="680" y="450" style="font-size:26px">🎧 Audio Decision Model</text>
+          <text class="s" x="680" y="486">how does the caller sound?</text></g>
+        <path class="wire hume" style="stroke:#8e4ec6" d="M680 398 L680 306" marker-end="url(#ahP)"/>
+        <text id="arch-mood" x="698" y="360" style="font-size:22px;font-weight:700;fill:#f76b15">😤 frustrated</text>
+
+      </svg>
+        </div>
+      </section>
+
+      <!-- 11. Escalation -->
+      <section class="slide dark">
+        <div class="eyebrow mint">Escalation</div>
+        <h2>Upset twice? A person takes over.</h2>
+        <div class="grow arch slide-arch">
+      <svg viewBox="0 120 1360 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Architecture with the escalation path: two frustrated turns, live call control, then a person">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa1ac"/></marker>
+          <marker id="ahP2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8e4ec6"/></marker>
+          <marker id="ahO2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f76b15"/></marker>
+        </defs>
+        <g opacity="0.3">
+        <!-- main row -->
+        <g class="node"><rect x="20" y="140" width="180" height="160" rx="18"/>
+          <text class="e" x="110" y="196">🗣️</text><text class="t" x="110" y="244">Caller</text><text class="s" x="110" y="276">speaks</text></g>
+        <g class="node vapi"><rect x="250" y="140" width="220" height="160" rx="18"/>
+          <svg x="330" y="152" width="60" height="60" viewBox="0 0 500 500" aria-label="Vapi logo"><path d="M208.518 242.429C232.735 254.842 260.28 248.508 277.823 227.705C289.148 214.277 301.125 199.079 310.435 187.018C321.027 173.295 337.312 165.085 354.648 165.085C377.006 165.085 397.119 178.673 405.463 199.415L484.215 395.169C485.246 397.732 482.326 400.128 480.078 398.52C456.498 381.654 383.709 330.666 328.389 303.516C304.682 291.881 277.932 297.465 261.121 317.832C246.323 335.76 230.104 357.783 218.279 374.301C207.452 389.426 190.093 398.601 171.492 398.601C148.489 398.601 127.8 384.606 119.24 363.254L15.7848 105.198C14.69 102.467 18.0593 100.03 20.2367 102.009C48.4828 127.676 137.187 205.866 208.518 242.429Z" fill="#FEFEFE"/></svg><text class="t" x="360" y="244">Vapi</text><text class="s" x="360" y="276">hears the words</text></g>
+        <g class="node server"><rect x="520" y="140" width="320" height="160" rx="18"/>
+          <text class="e" x="680" y="196">🧠</text><text class="t" x="680" y="244">LLM</text><text class="s" x="680" y="276">our server · tags each reply</text></g>
+        <g class="node el"><rect x="890" y="140" width="220" height="160" rx="18"/>
+          <text class="e" x="1000" y="196">🔊</text><text class="t" x="1000" y="244">Voice</text><text class="s" x="1000" y="276">performs the tag</text></g>
+        <g class="node"><rect x="1160" y="140" width="180" height="160" rx="18"/>
+          <text class="e" x="1250" y="196">👂</text><text class="t" x="1250" y="244">Caller</text><text class="s" x="1250" y="276">hears it</text></g>
+        <path class="wire flow" d="M202 220 L246 220" marker-end="url(#ah2)"/>
+        <path class="wire flow" d="M472 220 L516 220" marker-end="url(#ah2)"/>
+        <path class="wire flow" d="M842 220 L886 220" marker-end="url(#ah2)"/>
+        <path class="wire flow" d="M1112 220 L1156 220" marker-end="url(#ah2)"/>
+
+        <!-- Hume branch -->
+        <path class="wire hume flow" style="stroke:#8e4ec6" d="M360 302 L360 470 L514 470" marker-end="url(#ahP2)"/>
+        <text class="lbl" x="346" y="400" text-anchor="end">live audio</text>
+        <g class="node hume"><rect x="520" y="400" width="320" height="115" rx="18"/>
+          <text class="t" x="680" y="450" style="font-size:26px">🎧 Audio Decision Model</text>
+          <text class="s" x="680" y="486">how does the caller sound?</text></g>
+        <path class="wire hume" style="stroke:#8e4ec6" d="M680 398 L680 306" marker-end="url(#ahP2)"/>
+        <text x="698" y="360" style="font-size:22px;font-weight:700;fill:#f76b15">😤 frustrated</text>
+
+      
+        </g>
+
+        <!-- escalation lane -->
+        <path class="wire esc" d="M600 517 L600 548 L400 548 L400 578" marker-end="url(#ahO2)"/>
+        <text class="esc-lane" x="20" y="642">Escalation</text>
+        <g class="node esc" id="arch-esc-a"><rect x="250" y="582" width="300" height="115" rx="18"/>
+          <text class="t" x="400" y="630" style="font-size:28px">😤 × 2 turns</text><text class="s" x="400" y="666">angry or frustrated</text></g>
+        <g class="node esc" id="arch-esc-b"><rect x="600" y="582" width="320" height="115" rx="18"/>
+          <text class="t" x="760" y="630" style="font-size:28px">Live call control</text><text class="s" x="760" y="666">server says "transfer"</text></g>
+        <g class="node esc" id="arch-esc-c"><rect x="970" y="582" width="370" height="115" rx="18"/>
+          <text class="t" x="1155" y="630" style="font-size:28px">👩‍💼 A person</text><text class="s" x="1155" y="666">briefed before the caller joins</text></g>
+        <path class="wire esc" d="M552 640 L596 640" marker-end="url(#ahO2)"/>
+        <path class="wire esc" d="M922 640 L966 640" marker-end="url(#ahO2)"/>
+      </svg>
+        </div>
+      </section>
+
+      <!-- 12. The two demo calls -->
+      <section class="slide light">
+        <div class="eyebrow">The demo</div>
+        <h2>Same words. Different next step.</h2>
+        <div class="grow paths">
+          <div class="path ok">
+            <div class="eyebrow">Call 1 · pleased</div>
+            <div class="said">“Hi there. My internet’s been down since this morning.”</div>
+            <div class="read">😄 Happy <i>→</i> <span class="tone">Upbeat</span></div>
+            <div class="said">“Six tonight. Great, that’s just great.”</div>
+            <div class="read">😄 Happy <i>→</i> <span class="tone">Upbeat</span></div>
+            <div class="result">✅ A text alert. No handoff.</div>
+          </div>
+          <div class="path bad">
+            <div class="eyebrow">Call 2 · frustrated</div>
+            <div class="said">“Hi there. My internet’s been down since this morning.”</div>
+            <div class="read">😤 Frustrated <i>→</i> <span class="tone">Calm</span><span class="dots"><b class="on"></b><b></b></span></div>
+            <div class="said">“Six tonight. Great, that’s just great.”</div>
+            <div class="read">😤 Frustrated <i>→</i> <span class="tone person">A person</span><span class="dots"><b class="on"></b><b class="on"></b></span></div>
+            <div class="result">👩‍💼 A person takes over.</div>
+          </div>
+        </div>
+      </section>
+
+          </div>
+  </div>
+</div>
+
+<script>
+const CALLER = {
+  angry: { c: 'var(--angry)', face: '😠', label: 'Angry' },
+  frustrated: { c: 'var(--frustrated)', face: '😤', label: 'Frustrated' },
+  sad: { c: 'var(--sad)', face: '😔', label: 'Sad' },
+  fearful: { c: 'var(--fearful)', face: '😟', label: 'Worried' },
+  happy: { c: 'var(--happy)', face: '😄', label: 'Happy' },
+  neutral: { c: 'var(--neutral)', face: '😐', label: 'Neutral' },
+};
+const AGENT = {
+  'calm and reassuring': { c: 'var(--calm)', face: '🫶', label: 'Calm & reassuring' },
+  'warm and friendly': { c: 'var(--warm)', face: '🙂', label: 'Warm & friendly' },
+  'upbeat and bright': { c: 'var(--upbeat)', face: '😊', label: 'Upbeat & bright' },
+  'gentle and empathetic': { c: 'var(--gentle)', face: '🤍', label: 'Gentle & empathetic' },
+  'irritated or curt': { c: 'var(--curt)', face: '😒', label: 'Irritated' },
+  'flat or robotic': { c: 'var(--flat)', face: '🤖', label: 'Flat' },
+  'none of these': { c: 'var(--neutral)', face: '❔', label: 'Unclear' },
+};
+const $ = (id) => document.getElementById(id);
+let currentCall = null;
+let lastBrand = null;
+
+function moodCardSet(card, spec) {
+  const el = $(card);
+  el.classList.remove('idle');
+  el.style.background = `linear-gradient(135deg, color-mix(in srgb, ${spec.c} 30%, var(--card)), var(--card) 75%)`;
+  el.style.boxShadow = `inset 0 0 0 3px color-mix(in srgb, ${spec.c} 70%, transparent)`;
+  $(card + '-face').textContent = spec.face;
+  $(card + '-label').textContent = spec.label;
+  $(card + '-label').style.color = spec.c;
+}
+
+// Show every score Hume returned for the latest clip, highest first.
+const SHORT = {
+  angry: 'angry', frustrated: 'frustrated', sad: 'sad', fearful: 'worried', happy: 'happy', neutral: 'neutral', 'none of these': 'none',
+  'calm and reassuring': 'calm', 'warm and friendly': 'warm', 'upbeat and bright': 'upbeat', 'gentle and empathetic': 'gentle',
+  'irritated or curt': 'curt', 'flat or robotic': 'flat',
+};
+function scoresSet(card, probs, map) {
+  // Only the top reading, so the room sees one clear answer per turn.
+  const rows = Object.entries(probs ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 1);
+  $(card + '-scores').innerHTML = rows.map(([k, v], i) => {
+    const spec = map[k];
+    const cls = i === 0 ? 'sc top' : v < 0.05 ? 'sc low' : 'sc';
+    const word = SHORT[k] ?? k;
+    return `<span class="${cls}" title="${k}" style="${i === 0 && spec ? `color:${spec.c}` : ''}">${word} ${Math.round(v * 100)}%</span>`;
+  }).join('');
+}
+
+function historyAdd(card, color, title) {
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.style.background = color;
+  dot.title = title;
+  const h = $(card + '-history');
+  h.appendChild(dot);
+  while (h.querySelectorAll('.dot').length > 14) h.querySelector('.dot').remove();
+}
+
+function placeholderClear(id) {
+  const p = $(id).querySelector('.placeholder');
+  if (p) p.remove();
+}
+
+function scrollDown(id) { const el = $(id); el.scrollTop = el.scrollHeight; }
+
+function msgAdd(role, text, tag, color) {
+  placeholderClear('transcript');
+  const m = document.createElement('div');
+  m.className = 'msg ' + role;
+  if (tag) {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.textContent = tag;
+    if (color) t.style.color = color;
+    m.appendChild(t);
+  }
+  if (color) (role === 'user' ? (m.style.borderLeftColor = color) : (m.style.borderRightColor = color));
+  const body = document.createElement('div');
+  body.textContent = text;
+  m.appendChild(body);
+  $('transcript').appendChild(m);
+  scrollDown('transcript');
+  return m;
+}
+
+// One guardrail row per reply: caller face -> agent face + delivery, or a blocked-tag row.
+function ruleAdd(callerFace, agentSpec, blockedText) {
+  const r = document.createElement('div');
+  r.className = 'rule-row' + (blockedText ? ' blocked' : '');
+  if (blockedText) {
+    r.textContent = blockedText;
+  } else {
+    const faces = document.createElement('span');
+    faces.className = 'faces';
+    faces.innerHTML = '<span></span><i>➜</i><span></span>';
+    faces.children[0].textContent = callerFace;
+    faces.children[2].textContent = agentSpec.face;
+    const label = document.createElement('span');
+    label.textContent = agentSpec.label;
+    label.style.color = agentSpec.c;
+    r.append(faces, label);
+  }
+  $('rules').appendChild(r);
+  while ($('rules').children.length > 12) $('rules').firstElementChild.remove();
+}
+
+function resetBoard() {
+  currentCall = null;
+  delete $('escbar').dataset.locked;
+  escReset();
+  lastBrand = null;
+  $('status').textContent = 'Ready';
+  $('status').className = 'pill';
+  for (const card of ['caller', 'agent']) {
+    const el = $(card);
+    el.classList.add('idle');
+    el.style.background = '';
+    el.style.boxShadow = '';
+    $(card + '-label').style.color = '';
+    $(card + '-history').innerHTML = '';
+    $(card + '-scores').innerHTML = '';
+  }
+  $('caller-face').textContent = '🎧';
+  $('caller-label').textContent = 'Listening';
+  $('agent-face').textContent = '🎙️';
+  $('agent-label').textContent = 'Ready';
+  $('agent-flag').textContent = '';
+  $('bridge-arrow').className = 'arrow';
+  $('packet').classList.remove('show');
+  $('pk-end').textContent = '';
+  $('transcript').innerHTML = '';
+  $('rules').innerHTML = '';
+}
+
+// Only a call-opening event may claim the board, so a late event from a
+// finished call never wipes a live one.
+function accept(d, opening) {
+  if (!d || !d.callId) return true;
+  if (d.callId === currentCall) return true;
+  if (opening || !currentCall) {
+    if (currentCall && currentCall !== d.callId) resetBoard();
+    currentCall = d.callId;
+    $('status').textContent = 'Live';
+    $('status').className = 'pill live';
+    return true;
+  }
+  return false;
+}
+
+const PAL_ROW = { angry: 'pal-upset', frustrated: 'pal-upset', sad: 'pal-sad', fearful: 'pal-sad', happy: 'pal-happy' };
+function archLive(d) {
+  const decided = d.decidedMood ?? d.callerMood;
+  const spec = CALLER[decided];
+  if (spec) {
+    const m = $('arch-mood');
+    m.textContent = `${spec.face} ${spec.label.toLowerCase()}`;
+    m.style.fill = spec.c;
+  }
+  document.querySelectorAll('.pal-row').forEach((r) => r.classList.toggle('on', r.id === PAL_ROW[decided]));
+}
+
+function escReset() {
+  $('escbar').className = 'escbar';
+  document.querySelectorAll('#pips i').forEach((p) => p.classList.remove('on'));
+  $('esc-count').textContent = '';
+  for (const id of ['step-handoff', 'step-transfer', 'step-briefed', 'step-handed']) $(id).className = 'step';
+}
+function stepSet(id, state) { $(id).className = `step ${state}`; }
+function archEscSet(id, state) { $(id)?.setAttribute('class', `node esc ${state}`); }
+
+const handlers = {
+  reset: () => resetBoard(),
+  'call-start': (d) => { accept(d, true); },
+  'upset-count': (d) => {
+    if ($('escbar').dataset.locked) return; // escalation already under way
+    const n = Math.min(d.count, d.needed);
+    const pips = $('pips');
+    while (pips.children.length < d.needed) pips.appendChild(document.createElement('i'));
+    while (pips.children.length > d.needed) pips.lastElementChild.remove();
+    document.querySelectorAll('#pips i').forEach((p, i) => p.classList.toggle('on', i < n));
+    $('escbar').className = `escbar${d.due ? ' due' : d.count > 0 ? ' hot' : ''}`;
+    $('esc-count').textContent = d.due ? 'Handing off' : '';
+    archEscSet('arch-esc-a', d.count > 0 ? 'lit' : '');
+  },
+  'caller-mood': (d) => {
+    const spec = CALLER[d.label] ?? CALLER.neutral;
+    moodCardSet('caller', spec);
+    historyAdd('caller', spec.c, `${spec.label} ${Math.round(d.prob * 100)}%`);
+    scoresSet('caller', d.probs, CALLER);
+  },
+  brand: (d) => {
+    lastBrand = d;
+    const spec = AGENT[d.delivery] ?? AGENT['warm and friendly'];
+    moodCardSet('agent', spec);
+    $('agent-flag').textContent = '';
+    $('bridge-arrow').className = 'arrow on';
+    ruleAdd(CALLER[d.callerMood]?.face ?? '🎧', spec);
+    archLive(d);
+  },
+  'agent-text': (d) => {
+    const spec = lastBrand ? (AGENT[lastBrand.delivery] ?? null) : null;
+    const tag = lastBrand?.tag ?? '';
+    const plain = (d.text || '').split(tag).join('').replace(/\s+/g, ' ').trim();
+    msgAdd('agent', plain, tag, spec?.c);
+    if (d.stripped > 0) ruleAdd(null, null, `✂️ Blocked ${d.stripped} off-brand tag${d.stripped === 1 ? '' : 's'}`);
+  },
+  'agent-mood': (d) => {
+    const spec = AGENT[d.label] ?? AGENT['none of these'];
+    $('agent-flag').textContent = d.match ? '' : '· ⚠ Off brand';
+    historyAdd('agent', spec.c, `${spec.label} ${Math.round(d.prob * 100)}%`);
+    scoresSet('agent', d.probs, AGENT);
+  },
+  transcript: (d) => {
+    if (d.role !== 'user') return; // agent lines come from agent-text, with their tag
+    const mood = $('caller-label').textContent;
+    const spec = Object.values(CALLER).find((m) => m.label === mood);
+    msgAdd('user', d.text, null, spec?.c);
+  },
+  'transfer-packet': (d) => {
+    $('pk-to').textContent = d.to || 'Specialist';
+    $('pk-brief').textContent = `“${d.summary}”`;
+    $('pk-trail').innerHTML = (d.trail || []).map((t) => {
+      const spec = CALLER[t.label] ?? CALLER.neutral;
+      return `<span title="${spec.label} ${Math.round(t.prob * 100)}%">${spec.face}</span>`;
+    }).join('<i>➜</i>');
+    $('packet').classList.add('show');
+  },
+  escalation: (d) => {
+    $('escbar').dataset.locked = '1';
+    $('escbar').className = 'escbar due';
+    document.querySelectorAll('#pips i').forEach((p) => p.classList.add('on'));
+    archEscSet('arch-esc-a', 'ok');
+    const st = d.status;
+    if (st === 'speaking') {
+      $('esc-count').textContent = 'Escalating';
+      stepSet('step-handoff', 'active'); archEscSet('arch-esc-b', 'lit');
+    } else if (st === 'transferring' || st === 'dialing') {
+      $('esc-count').textContent = 'Escalating';
+      stepSet('step-handoff', 'done'); stepSet('step-transfer', 'active'); archEscSet('arch-esc-b', 'lit');
+    } else if (st === 'briefed') {
+      $('esc-count').textContent = 'Escalating';
+      stepSet('step-handoff', 'done'); stepSet('step-transfer', 'done'); stepSet('step-briefed', 'active');
+      archEscSet('arch-esc-b', 'ok'); archEscSet('arch-esc-c', 'lit');
+    } else if (st === 'handed-off' || st === 'done') {
+      $('esc-count').textContent = 'Handed off ✓'; $('escbar').className = 'escbar done';
+      for (const id of ['step-handoff', 'step-transfer', 'step-briefed', 'step-handed']) stepSet(id, 'done');
+      archEscSet('arch-esc-b', 'ok'); archEscSet('arch-esc-c', 'ok');
+    } else if (st === 'hung-up') {
+      $('esc-count').textContent = 'Handed off ✓'; $('escbar').className = 'escbar done';
+      for (const id of ['step-handoff', 'step-transfer', 'step-briefed', 'step-handed']) stepSet(id, 'done');
+      $('pk-end').textContent = 'Agent hung up ✓';
+    } else if (st === 'failed') {
+      $('esc-count').textContent = 'Transfer failed'; $('escbar').className = 'escbar fail';
+      if (d.reason) console.info('transfer failed:', d.reason);
+      stepSet('step-handoff', 'done'); stepSet('step-transfer', 'fail');
+    }
+  },
+  'call-end': (d) => {
+    if (d.callId !== currentCall) return;
+    $('status').textContent = 'Call ended';
+    $('status').className = 'pill ended';
+  },
+};
+
+const es = new EventSource('/events');
+es.onmessage = (ev) => {
+  let msg;
+  try { msg = JSON.parse(ev.data); } catch { return; }
+  const d = msg.data;
+  if (msg.type !== 'reset' && !accept(d, msg.type === 'call-start')) return;
+  handlers[msg.type]?.(d);
+};
+$('reset').onclick = () => fetch('/reset', { method: 'POST' });
+
+// ---- Views: Live demo <-> Slides (same page, so a live call keeps running)
+const slides = [...document.querySelectorAll('#deck .slide')];
+let slideIdx = 0;
+slides.forEach((el, n) => el.insertAdjacentHTML('afterbegin', `<span class="slide-no">${n + 1}</span>`));
+function slideShow(i) {
+  slideIdx = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((el, n) => el.classList.toggle('on', n === slideIdx));
+}
+function viewShow(name) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+  document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
+}
+const slidesOpen = () => $('view-slides').classList.contains('active');
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { viewShow(t.dataset.view); t.blur(); }));
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === '1') viewShow('demo');
+  if (e.key === '2') viewShow('slides');
+  if (!slidesOpen()) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); slideShow(slideIdx + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); slideShow(slideIdx - 1); }
+  if (e.key === 'Home') slideShow(0);
+  if (e.key === 'End') slideShow(slides.length - 1);
+});
+// Sound-wave bars, same shape as the deck's.
+const WAVE = [6, 12, 18, 10, 26, 36, 22, 12, 20, 40, 48, 26, 14, 8, 20, 34, 26, 14, 18, 32, 24, 12, 16, 30, 20, 10, 14, 22, 12, 8, 10, 6, 6, 4];
+document.querySelectorAll('.slide .wave').forEach((w) => { w.innerHTML = WAVE.map((h) => `<i style="height:${h * 2}%"></i>`).join(''); });
+slideShow(0);
+if (location.hash === '#slides') viewShow('slides');
+
+// ---- Talk to the agent (Vapi Web SDK). The server mints a short-lived token
+// restricted to this assistant and origin, so no key ever reaches the page.
+const talkBtn = $('talk-btn');
+let VapiCtor = null, vapi = null, callActive = false, connecting = false;
+const btnIdle = () => { callActive = false; connecting = false; vapi = null; talkBtn.disabled = false; talkBtn.classList.remove('live'); talkBtn.textContent = '🎙 Talk to the agent'; };
+const btnLive = () => { callActive = true; connecting = false; talkBtn.disabled = false; talkBtn.classList.add('live'); talkBtn.textContent = '⏹ End call'; };
+async function webCallStart() {
+  connecting = true; talkBtn.disabled = true; talkBtn.textContent = 'Connecting…';
+  try {
+    const res = await fetch('/webcall-token');
+    if (!res.ok) throw new Error(`token fetch failed: ${res.status}`);
+    const { token, assistantId } = await res.json();
+    if (!VapiCtor) ({ default: VapiCtor } = await import('https://esm.sh/@vapi-ai/web@3.1.0'));
+    vapi = new VapiCtor(token);
+    vapi.on('call-start', btnLive);
+    vapi.on('call-end', btnIdle);
+    vapi.on('error', (err) => { console.error('vapi error', err); btnIdle(); });
+    await vapi.start(assistantId);
+  } catch (err) { console.error('web call failed', err); btnIdle(); }
+}
+talkBtn.addEventListener('click', () => { if (connecting) return; if (callActive) { vapi?.stop(); return; } webCallStart(); });
+</script>
+</body>
+</html>
