@@ -1,6 +1,6 @@
 # Emotion-Aware Voice Agent
 
-> 🧪 **This is a showcase demo, not an officially supported Vapi product.** Built by Noah Raynor at Vapi for the VapiCon 2026 workshop "Beyond the Transcript", presented with Dhruva Reddy. This is meant to inspire, not production ready.
+> 🧪 **This is a showcase demo, not an officially supported Vapi product.** Built by Noah Raynor and Dhruva Reddy at Vapi for the VapiCon 2026 workshop "Beyond the Transcript". This is meant to inspire, not production ready.
 
 ## What it does
 
@@ -110,4 +110,4 @@ It reads `PORT` from the environment. A few options:
 
 ## Built by
 
-[Noah Raynor](https://github.com/noahraynor-vapi), Forward Deployed Engineering at Vapi
+Noah Raynor and Dhruva Reddy, Forward Deployed Engineering at Vapi
