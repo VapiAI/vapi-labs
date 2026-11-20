@@ -1,0 +1,71 @@
+{
+  "name": "Emotion-Aware Support Agent",
+  "firstMessage": "[slightly warm, friendly] Thanks for calling Super Reliable Internet, this is Sam. How can I help today?",
+  "model": {
+    "url": "SERVER_URL",
+    "model": "gpt-4.1",
+    "headers": {
+      "x-demo-secret": "DEMO_SECRET"
+    },
+    "provider": "custom-llm",
+    "maxTokens": 300,
+    "temperature": 0.3,
+    "timeoutSeconds": 20,
+    "metadataSendMode": "variable"
+  },
+  "voice": {
+    "model": "eleven_v4_turbo",
+    "voiceId": "iP95p4xoKVk53GoZ742B",
+    "provider": "11labs",
+    "chunkPlan": {
+      "punctuationBoundaries": [
+        ".",
+        "!",
+        "?"
+      ]
+    },
+    "stability": 0.5,
+    "inputPunctuationBoundaries": [
+      ".",
+      "!",
+      "?"
+    ]
+  },
+  "transcriber": {
+    "model": "flux-general-en",
+    "language": "en",
+    "provider": "deepgram",
+    "confidenceThreshold": 0
+  },
+  "server": {
+    "url": "SERVER_URL/vapi",
+    "timeoutSeconds": 20,
+    "headers": {
+      "x-demo-secret": "DEMO_SECRET"
+    }
+  },
+  "serverMessages": [
+    "status-update",
+    "transcript",
+    "end-of-call-report"
+  ],
+  "backgroundSpeechDenoisingPlan": {
+    "smartDenoisingPlan": {
+      "enabled": false
+    },
+    "fourierDenoisingPlan": {
+      "enabled": false
+    }
+  },
+  "analysisPlan": {
+    "summaryPlan": {
+      "enabled": false
+    },
+    "successEvaluationPlan": {
+      "enabled": false
+    }
+  },
+  "modelOutputInMessagesEnabled": false,
+  "silenceTimeoutSeconds": 120,
+  "maxDurationSeconds": 600
+}
